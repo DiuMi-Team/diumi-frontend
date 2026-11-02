@@ -168,3 +168,4 @@ next-env.d.ts
 # 로컬 참고 자료 (저장소에 올리지 않음)
 /design/
 /CLAUDE.md
+/AGENTS.md

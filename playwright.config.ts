@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  use: { baseURL: "http://localhost:3000" },
+  use: { baseURL: "http://localhost:3100" },
   projects: [
     {
       name: "mobile",
@@ -19,9 +19,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run build && npm run start",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
+    command: "npm run build && npm run start -- -p 3100",
+    url: "http://localhost:3100",
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

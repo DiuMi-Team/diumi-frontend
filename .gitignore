@@ -147,3 +147,24 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# next.js
+/build
+next-env.d.ts
+
+# vercel
+.vercel
+
+# misc
+.DS_Store
+*.pem
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# 로컬 참고 자료 (저장소에 올리지 않음)
+/design/
+/CLAUDE.md

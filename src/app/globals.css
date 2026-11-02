@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* CLAUDE.md의 색상 토큰. 기본 팔레트를 지워 토큰 밖의 색을 쓰지 못하게 한다. */
+@theme {
+  --color-*: initial;
+  --color-primary: #55a4e3;
+  --color-mint-light: #b9e6e8;
+  --color-mint: #5ac7c3;
+  --color-orange: #f5a65b;
+  --color-white: #fdfdfd;
+  --color-white-pure: #ffffff;
+  --color-gray-1: #eff4f4;
+  --color-gray-2: #dfebec;
+  --color-text: #3d3531;
+  --color-text-sub: #788086;
+  --color-error: #e5484d;
+  --color-error-bg: #fde4e4;
+  --color-error-text: #d93036;
+  --color-black: #000000;
+
+  --font-sans: var(--font-ibm-plex-sans-kr), sans-serif;
+
+  /* 디자인의 13~15px은 접근성 기준에 맞춰 16px로 올렸다. 16px 미만 크기는 두지 않는다. */
+  --text-*: initial;
+  --text-16: 16px;
+  --text-17: 17px;
+  --text-18: 18px;
+  --text-19: 19px;
+  --text-20: 20px;
+  --text-21: 21px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-26: 26px;
+  --text-28: 28px;
+  --text-29: 29px;
+  --text-30: 30px;
+  --text-32: 32px;
+  --text-68: 68px;
+  --text-72: 72px;
+  --text-76: 76px;
+  --text-80: 80px;
+}
+
+:root {
+  color-scheme: light;
+}

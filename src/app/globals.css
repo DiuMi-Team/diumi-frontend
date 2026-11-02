@@ -7,6 +7,7 @@
   --color-mint-light: #b9e6e8;
   --color-mint: #5ac7c3;
   --color-orange: #f5a65b;
+  --color-orange-light: #fdebd9;
   --color-white: #fdfdfd;
   --color-white-pure: #ffffff;
   --color-gray-1: #eff4f4;
@@ -43,4 +44,20 @@
 
 :root {
   color-scheme: light;
+}
+
+@layer base {
+  /* 디자인은 줄 간격을 지정하지 않은 글자에 브라우저 기본값을 쓴다. */
+  body {
+    line-height: normal;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }

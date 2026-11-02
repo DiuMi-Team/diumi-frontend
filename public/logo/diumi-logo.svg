@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 239 80">
+<g id="symbol">
+  <circle cx="26.7" cy="11.4" r="11.2" fill="#55A4E3"/>
+  <path fill="#55A4E3" fill-rule="evenodd" d="M15 24.7h23a14 14 0 0 1 14 14v14.8a14 14 0 0 1-14 14H15a14 14 0 0 1-14-14V38.7a14 14 0 0 1 14-14zM18 37h15.5a8.2 8.2 0 0 1 8.2 8.2v1.6a8.2 8.2 0 0 1-8.2 8.2H18a3.3 3.3 0 0 1-3.3-3.3V40.3A3.3 3.3 0 0 1 18 37z"/>
+  <circle cx="80.8" cy="11.4" r="11.2" fill="#5AC7C3"/>
+  <path fill="#5AC7C3" fill-rule="evenodd" d="M72.5 24.7h9.5a20.1 20.1 0 0 1 20.1 20.1v2.6a20.1 20.1 0 0 1-20.1 20.1h-9.5a20.1 20.1 0 0 1-20.1-20.1v-2.6a20.1 20.1 0 0 1 20.1-20.1zM74 37h5.3a9 9 0 0 1 9 9v0a9 9 0 0 1-9 9H74a9 9 0 0 1-9-9v0a9 9 0 0 1 9-9z"/>
+  <rect x="43" y="35" width="22" height="13.6" rx="6.8" fill="#B9E6E8"/>
+</g><g id="wordmark" fill="none" stroke="#3D3531" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M135.4 30.9H116.2V57.1H135.4"/>
+  <path d="M145.4 29.6V62.1"/>
+  <rect x="158.65" y="30.4" width="25.1" height="12.5" rx="6.25"/>
+  <path d="M156 51.7H186.4M171.2 51.7V61.8"/>
+  <rect x="196.2" y="30.9" width="15.9" height="26.2" rx="1.6"/>
+  <path d="M221.7 29.6V62.1"/>
+</g>
+</svg>

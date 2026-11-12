@@ -13,7 +13,7 @@ type NavBarProps = {
 };
 
 export function NavBar({ home = "/", back, size = "md" }: NavBarProps) {
-  const padding = size === "lg" ? "py-3" : "py-2.5";
+  const padding = size === "lg" ? "py-3 short:py-2" : "py-2.5 short:py-1";
   const height = size === "lg" ? "h-[52px]" : "h-12";
 
   return (

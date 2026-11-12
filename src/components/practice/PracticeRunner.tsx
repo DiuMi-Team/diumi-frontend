@@ -34,19 +34,30 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
   const [missed, setMissed] = useState(false);
   const [quitOpen, setQuitOpen] = useState(false);
   const focusRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const movedRef = useRef(false);
 
-  /* 화면이 바뀌면 누른 버튼이 사라지므로, 새 안내 문구로 포커스를 옮겨 화면 낭독기가 읽게 한다 */
+  /*
+   * 화면이 바뀌거나 빨간 안내가 뜨면:
+   * - 누른 버튼이 사라지므로 새 안내 문구로 포커스를 옮겨 화면 낭독기가 읽게 하고
+   * - 본문을 맨 위로 올린 뒤, 눌러야 할 곳이 화면 밖이면 보이는 만큼만 내려 준다
+   */
   useEffect(() => {
     if (!movedRef.current) return;
-    focusRef.current?.focus();
-  }, [position]);
+    focusRef.current?.focus({ preventScroll: true });
+    const main = mainRef.current;
+    if (!main) return;
+    main.scrollTo({ top: 0 });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    main
+      .querySelector("[data-practice-target]")
+      ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+  }, [position, missed]);
 
   const move = (next: PracticePosition) => {
     movedRef.current = true;
     setPosition(next);
     setMissed(false);
-    window.scrollTo(0, 0);
   };
 
   const goBack = () => {
@@ -73,7 +84,7 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
     return (
       <>
         {header}
-        <div ref={focusRef} tabIndex={-1} className="flex flex-1 flex-col outline-none">
+        <div ref={focusRef} tabIndex={-1} className="flex min-h-0 flex-1 flex-col outline-none">
           <MissionComplete mission={mission} />
         </div>
       </>
@@ -88,7 +99,10 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
       {header}
       <NavBar home={() => setQuitOpen(true)} back={goBack} />
       <main
-        className={`flex flex-1 flex-col px-5 pt-3.5 pb-4 ${SCREEN_GAP[step.screen] ?? "gap-3"}`}
+        ref={mainRef}
+        className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-5 *:shrink-0 pt-3.5 pb-4 short:pt-2 short:pb-2 ${
+          SCREEN_GAP[step.screen] ?? "gap-3 short:gap-2"
+        }`}
       >
         <PracticeProgress
           step={step.progress.stage}
@@ -116,7 +130,10 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
             tap: (targetId) => {
               const result = tap(mission, position, targetId);
               if (result.kind === "move") move(result.position);
-              else setMissed(true);
+              else {
+                movedRef.current = true;
+                setMissed(true);
+              }
             },
           }}
         >

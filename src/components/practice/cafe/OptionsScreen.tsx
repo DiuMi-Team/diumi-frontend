@@ -35,7 +35,7 @@ export function OptionsScreen() {
       <h2 className="mt-0.5 text-22 font-bold">{menuName} 옵션</h2>
 
       <div
-        className={`flex h-[60px] items-center justify-between rounded-[18px] bg-gray-1 pr-3 pl-[18px] text-18 font-bold ${quantityGroupClass}`}
+        className={`flex h-[60px] items-center justify-between rounded-[18px] bg-gray-1 pr-3 pl-[18px] text-18 font-bold short:h-12 ${quantityGroupClass}`}
       >
         수량
         <span className="flex items-center gap-3">
@@ -113,8 +113,8 @@ function QuantityButton({
 
 function OptionGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} className="flex flex-col gap-1.5">
-      <span className="text-16 font-bold text-text-sub">{label}</span>
+    <div role="group" aria-label={label} className="flex flex-col gap-1.5 short:gap-0.5">
+      <span className="text-16 font-bold text-text-sub short:leading-5">{label}</span>
       <div className="grid grid-cols-2 gap-2.5">{children}</div>
     </div>
   );
@@ -134,7 +134,7 @@ function TemperatureTile({ value, selected }: { value: Temperature; selected: bo
       tight
       pressed={selected}
       inactiveClassName={selected ? "opacity-90" : undefined}
-      className={`${TILE_CLASS} h-[72px] gap-2 ${selected ? SELECTED_CLASS : UNSELECTED_CLASS}`}
+      className={`${TILE_CLASS} h-[72px] gap-2 short:h-14 ${selected ? SELECTED_CLASS : UNSELECTED_CLASS}`}
     >
       {icon}
       <span className="flex flex-col text-left leading-[1.2]">
@@ -159,7 +159,7 @@ function SizeTile({ value, selected }: { value: CupSize; selected: boolean }) {
       tight
       pressed={selected}
       inactiveClassName={selected ? "opacity-90" : undefined}
-      className={`${TILE_CLASS} h-[60px] gap-1.5 ${selected ? SELECTED_CLASS : UNSELECTED_CLASS}`}
+      className={`${TILE_CLASS} h-[60px] gap-1.5 short:h-12 ${selected ? SELECTED_CLASS : UNSELECTED_CLASS}`}
     >
       {name}
       <span className={`text-16 font-medium ${selected ? "" : "text-text-sub"}`}>{note}</span>
@@ -181,7 +181,7 @@ function ExtraOptionRow({ id, title, examples, selected }: ExtraOptionRowProps) 
       <KioskButton
         id={id}
         inactiveClassName="opacity-90"
-        className="flex h-14 items-center justify-between rounded-[18px] border-3 border-primary bg-white px-4 text-17 font-bold text-primary"
+        className="flex h-14 items-center justify-between rounded-[18px] border-3 border-primary bg-white px-4 text-17 font-bold text-primary short:h-12"
       >
         <span>
           {title} <span className="text-16 font-medium">{selected}</span>
@@ -194,7 +194,7 @@ function ExtraOptionRow({ id, title, examples, selected }: ExtraOptionRowProps) 
   return (
     <KioskButton
       id={id}
-      className="flex h-14 items-center justify-between rounded-[18px] bg-gray-1 px-[18px] text-17 font-bold"
+      className="flex h-14 items-center justify-between rounded-[18px] bg-gray-1 px-[18px] text-17 font-bold short:h-12"
     >
       <span>
         {title} <span className="text-16 font-medium text-text-sub">{examples}</span>

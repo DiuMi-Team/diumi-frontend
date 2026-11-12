@@ -29,6 +29,6 @@ export const CAFE_SCREENS: Record<PracticeScreen, ComponentType> = {
 
 /** 옵션·유료 옵션 화면은 칸이 많아 간격이 10px, 나머지는 12px */
 export const SCREEN_GAP: Partial<Record<PracticeScreen, string>> = {
-  options: "gap-2.5",
-  paidOptions: "gap-2.5",
+  options: "gap-2.5 short:gap-1",
+  paidOptions: "gap-2.5 short:gap-1",
 };

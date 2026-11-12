@@ -10,9 +10,9 @@ type MissionIntroProps = {
 /** 오늘의 미션 (PC01 등) */
 export function MissionIntro({ mission, onStart }: MissionIntroProps) {
   return (
-    <main className="flex flex-1 flex-col gap-3.5 px-5 pt-5 pb-4">
+    <main className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto *:shrink-0 px-5 pt-5 pb-4 short:gap-2.5 short:pt-3 short:pb-3">
       <h1 className="text-28 leading-[1.3] font-bold">오늘의 미션</h1>
-      <ol className="flex flex-col gap-3.5 rounded-3xl bg-mint-light p-[18px]">
+      <ol className="flex flex-col gap-3.5 rounded-3xl bg-mint-light p-[18px] short:gap-2 short:py-3.5">
         {mission.intro.items.map((item, index) => (
           <li key={item.title} className="flex gap-3">
             <span className="flex size-8 flex-none items-center justify-center rounded-full bg-white text-17 font-bold">
@@ -25,7 +25,7 @@ export function MissionIntro({ mission, onStart }: MissionIntroProps) {
           </li>
         ))}
       </ol>
-      <ul className="flex flex-col gap-3 rounded-3xl bg-gray-1 px-[18px] py-4 text-17">
+      <ul className="flex flex-col gap-3 rounded-3xl bg-gray-1 px-[18px] py-4 text-17 short:gap-2 short:py-3">
         <li className="flex items-center gap-3">
           <ClockIcon size={36} />
           예상 시간 약 {mission.intro.estimatedMinutes}분
@@ -45,7 +45,7 @@ export function MissionIntro({ mission, onStart }: MissionIntroProps) {
       <button
         type="button"
         onClick={onStart}
-        className="flex h-16 flex-none items-center justify-center gap-2 rounded-full bg-primary text-22 font-bold text-white-pure"
+        className="flex h-16 flex-none items-center justify-center gap-2 rounded-full bg-primary text-22 font-bold text-white-pure short:h-14"
       >
         연습 시작하기
         <ChevronRightIcon size={20} />

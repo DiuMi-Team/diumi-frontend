@@ -27,7 +27,7 @@ export function PaidOptionsScreen() {
         <PaidOptionRow key={option.id} option={option} count={draft.paidOptions[option.id] ?? 0} />
       ))}
       <div
-        className={`flex flex-col gap-1.5 rounded-[18px] border-2 border-gray-1 px-4 py-3 text-16 ${
+        className={`flex flex-col gap-1.5 rounded-[18px] border-2 border-gray-1 px-4 py-3 text-16 short:gap-0.5 short:py-2 ${
           extra === 0 ? "opacity-45" : ""
         }`}
       >
@@ -65,7 +65,7 @@ function PaidOptionRow({ option, count }: { option: PaidOption; count: number })
     <div
       role="group"
       aria-label={`${option.name} ${count}개`}
-      className={`flex h-16 items-center gap-3 rounded-[18px] pr-3 pl-3.5 text-18 font-bold ${rowClass}`}
+      className={`flex h-16 items-center gap-3 rounded-[18px] pr-3 pl-3.5 text-18 font-bold short:h-14 ${rowClass}`}
     >
       <PaidOptionIcon option={option.id} size={36} />
       <span className={`flex flex-1 flex-col leading-[1.25] ${selected ? "text-primary" : ""}`}>

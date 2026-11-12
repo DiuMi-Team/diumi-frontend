@@ -30,9 +30,12 @@ export function OrderReviewScreen() {
   return (
     <>
       <ScreenHeading title="주문 내역을 확인해 주세요" />
-      <ul aria-label="주문 내역" className="flex flex-col rounded-3xl bg-gray-1 px-4 py-1">
+      <ul
+        aria-label="주문 내역"
+        className="flex flex-col rounded-3xl bg-gray-1 px-4 py-1 short:py-0.5"
+      >
         {order.cart.map((item, index) => (
-          <li key={index} className="flex items-center gap-3 py-3">
+          <li key={index} className="flex items-center gap-3 py-3 short:py-1.5">
             <MenuIcon menuId={item.menuId} size={44} shadow={false} />
             <span className="flex flex-1 flex-col">
               <b className="text-18">{getCafeMenu(item.menuId).name}</b>
@@ -48,7 +51,7 @@ export function OrderReviewScreen() {
           </li>
         ))}
       </ul>
-      <div className="flex flex-col gap-1.5 rounded-[20px] border-2 border-gray-1 px-4 py-3 text-16">
+      <div className="flex flex-col gap-1.5 rounded-[20px] border-2 border-gray-1 px-4 py-3 text-16 short:gap-0.5 short:py-2">
         <div className="flex justify-between">
           <span>주문 금액</span>
           <span>{formatWon(total)}</span>

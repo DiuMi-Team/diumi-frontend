@@ -20,10 +20,10 @@ export function CardInsertScreen() {
         sub={<PaymentAmount amount={payableTotal(order)} />}
       />
       {/* 디자인의 "[카드 넣는 위치 안내 이미지]"는 실제 이미지가 들어올 자리라 글자는 빼고 그림만 둔다 */}
-      <div className="flex min-h-40 flex-1 items-center justify-center rounded-3xl border-2 border-dashed border-text-sub bg-gray-2">
+      <div className="flex min-h-24 flex-1 items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-text-sub bg-gray-2 short:[&>svg]:size-16">
         <CardInsertIcon size={80} />
       </div>
-      <div className="rounded-[18px] bg-gray-1 px-4 py-3 text-16 leading-[1.45]">
+      <div className="rounded-[18px] bg-gray-1 px-4 py-3 text-16 leading-[1.45] short:py-2">
         결제가 끝날 때까지 카드를 빼지 마세요.
       </div>
       <KioskButton id="card:reselect" className={KIOSK_OUTLINE_CLASS}>

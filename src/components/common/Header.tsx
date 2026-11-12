@@ -9,7 +9,7 @@ type HeaderProps = {
 
 export function Header({ right }: HeaderProps) {
   return (
-    <header className="flex h-16 flex-none items-center justify-between bg-gray-2 px-5">
+    <header className="flex h-16 flex-none items-center justify-between bg-gray-2 px-5 short:h-14">
       <Link
         href="/"
         aria-label="디우미 홈"

@@ -40,7 +40,7 @@ export function MenuScreen() {
       )}
       <section
         aria-label="메뉴판"
-        className={`flex flex-col gap-2.5 rounded-3xl bg-gray-1 p-3 ${board.groupClass}`}
+        className={`flex flex-col gap-2.5 rounded-3xl bg-gray-1 p-3 short:gap-1.5 short:p-2 ${board.groupClass}`}
       >
         <div className={`flex gap-1.5 ${board.groupClass ? "" : tabs.groupClass}`}>
           {CAFE_CATEGORIES.map((category) => {
@@ -68,7 +68,7 @@ export function MenuScreen() {
               tight
               inactiveClassName={board.groupClass ? "" : cards.itemInactiveClass}
               ariaLabel={`${menu.name} ${formatWon(menu.price)}`}
-              className="flex h-[132px] flex-col items-center justify-center rounded-[20px] bg-white"
+              className="flex h-[132px] flex-col items-center justify-center rounded-[20px] bg-white short:h-24 short:[&>svg]:size-9"
             >
               <MenuIcon menuId={menu.id} size={56} />
               <b className="text-17">{menu.name}</b>
@@ -93,7 +93,7 @@ export function MenuScreen() {
 
 function CartSummary({ cart }: { cart: CartItem[] }) {
   const boxClass =
-    "flex items-center justify-between gap-2.5 rounded-[20px] border-2 border-dashed border-gray-2 px-4 py-3";
+    "flex items-center justify-between gap-2.5 rounded-[20px] border-2 border-dashed border-gray-2 px-4 py-3 short:py-1.5";
 
   if (cart.length === 0) {
     return (

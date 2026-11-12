@@ -10,7 +10,7 @@ import {
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 
 const serviceCardClass =
-  "flex h-[200px] w-full flex-col items-center justify-center gap-3.5 rounded-[28px] bg-gray-1 text-24 font-bold";
+  "flex h-[200px] w-full flex-col items-center justify-center gap-3.5 rounded-[28px] bg-gray-1 text-24 font-bold short:h-[156px] short:gap-2 short:[&>svg]:size-[72px]";
 
 export default function Home() {
   return (
@@ -23,7 +23,7 @@ export default function Home() {
           </HeaderLink>
         }
       />
-      <main className="flex flex-1 flex-col gap-5 px-5 pt-6 pb-5">
+      <main className="flex min-h-0 overflow-y-auto *:shrink-0 flex-1 flex-col gap-5 px-5 pt-6 pb-5 short:gap-3 short:pt-4 short:pb-4">
         <div>
           <h1 className="text-30 leading-[1.3] font-bold">무엇을 배워볼까요?</h1>
           <p className="mt-1.5 text-18 text-text-sub">서비스를 골라 주세요</p>
@@ -49,7 +49,7 @@ export default function Home() {
         <Link
           href="/help"
           aria-label="처음이신가요? 이용 방법 보러 가기"
-          className="flex h-[104px] items-center justify-between gap-3 rounded-[28px] bg-orange px-5"
+          className="flex h-[104px] items-center justify-between gap-3 rounded-[28px] bg-orange px-5 short:h-[88px]"
         >
           <span className="flex flex-col gap-0.5">
             <span className="text-21 font-bold">처음이신가요?</span>

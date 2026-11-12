@@ -299,3 +299,30 @@ export function PaidOptionIcon({ option, size }: IconProps & { option: PaidOptio
     </svg>
   );
 }
+
+/** 휴대폰 쿠폰 바코드를 스캐너에 대는 그림 */
+export function BarcodeScanIcon({ size }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true">
+      <ellipse cx="60" cy="112" rx="34" ry="5" {...SHADOW} />
+      <rect x="22" y="96" width="76" height="10" rx="5" fill="#3D3531" />
+      <rect x="34" y="99" width="52" height="4" rx="2" fill="#F5A65B" />
+      <rect x="36" y="8" width="48" height="84" rx="10" fill="#3D3531" />
+      <rect x="41" y="15" width="38" height="68" rx="5" fill="#FDFDFD" />
+      <rect x="45" y="20" width="30" height="10" rx="3" fill="#F5A65B" />
+      <path
+        d="M47 40v26M50 40v26M54 40v26M56 40v26M60 40v26M63 40v26M65 40v26M69 40v26M71 40v26M73 40v26"
+        stroke="#3D3531"
+        strokeWidth="2"
+      />
+      <rect x="47" y="70" width="26" height="4" rx="2" fill="#B9E6E8" />
+      <path
+        d="M30 88h60"
+        stroke="#F5A65B"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray="4 4"
+      />
+    </svg>
+  );
+}

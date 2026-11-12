@@ -12,9 +12,11 @@ import {
 import { getCafeMenu } from "@/features/cafe/catalog";
 import {
   cartTotal,
+  couponDiscount,
   formatWon,
   itemOptionLabel,
   itemPrice,
+  payableTotal,
   type DineOption,
 } from "@/features/order/order";
 
@@ -23,6 +25,7 @@ const DINE_LABEL: Record<DineOption, string> = { dineIn: "매장", takeout: "포
 export function OrderReviewScreen() {
   const { order } = usePractice();
   const total = cartTotal(order.cart);
+  const discount = couponDiscount(order);
 
   return (
     <>
@@ -50,9 +53,15 @@ export function OrderReviewScreen() {
           <span>주문 금액</span>
           <span>{formatWon(total)}</span>
         </div>
+        {discount > 0 && (
+          <div className="flex justify-between font-bold text-primary">
+            <span>쿠폰 할인</span>
+            <span>−{formatWon(discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-20 font-bold">
           <span>결제 금액</span>
-          <span>{formatWon(total)}</span>
+          <span>{formatWon(payableTotal(order))}</span>
         </div>
       </div>
       <Spacer />

@@ -5,7 +5,7 @@ import { CreditCardIcon, GiftCardIcon, MobilePayIcon } from "@/components/icons/
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
 import { PaymentAmount, ScreenHeading } from "@/components/practice/cafe/parts";
-import { cartTotal, type PaymentMethod } from "@/features/order/order";
+import { couponDiscount, payableTotal, type PaymentMethod } from "@/features/order/order";
 
 const METHODS: { value: PaymentMethod; name: string; icon: ReactNode }[] = [
   { value: "mobilePay", name: "모바일페이", icon: <MobilePayIcon size={52} /> },
@@ -20,7 +20,7 @@ export function PaymentMethodScreen() {
     <>
       <ScreenHeading
         title="결제 방법을 선택해 주세요"
-        sub={<PaymentAmount amount={cartTotal(order.cart)} />}
+        sub={<PaymentAmount amount={payableTotal(order)} discount={couponDiscount(order)} />}
       />
       {METHODS.map(({ value, name, icon }) => {
         const id = `payment:${value}`;

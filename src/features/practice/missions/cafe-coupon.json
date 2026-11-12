@@ -1,0 +1,96 @@
+{
+  "id": "cafe-coupon",
+  "service": "cafe",
+  "title": "쿠폰 쓰고 결제하기",
+  "totalStages": 3,
+  "selectHref": "/cafe/practice",
+  "realHref": "/cafe/real",
+  "intro": {
+    "items": [
+      { "title": "주문 내역 확인하기", "detail": "카페라떼 1잔이 담긴 상태에서 시작해요" },
+      { "title": "쿠폰 사용하기", "detail": "1,000원 할인 쿠폰 · 휴대폰 바코드" },
+      { "title": "남은 금액 카드로 결제하기" }
+    ],
+    "estimatedMinutes": 4
+  },
+  "initialOrder": {
+    "dineOption": "takeout",
+    "cart": [
+      {
+        "menuId": "latte",
+        "temperature": "hot",
+        "size": "regular",
+        "quantity": 1,
+        "paidOptions": {}
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "PD02",
+      "screen": "orderReview",
+      "progress": { "stage": 1, "detail": "주문 내역 확인" },
+      "guide": {
+        "title": "주문 내역을 확인하고 다음을 눌러 보세요",
+        "detail": "카페라떼 1잔이 담겨 있어요"
+      },
+      "target": { "id": "review:next", "label": "다음을" }
+    },
+    {
+      "id": "PD03",
+      "screen": "membership",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (1/3)" },
+      "guide": {
+        "title": "쿠폰 사용을 눌러 보세요",
+        "detail": "가지고 있는 할인 쿠폰을 써 볼 거예요"
+      },
+      "target": { "id": "membership:coupon", "label": "쿠폰 사용을" }
+    },
+    {
+      "id": "PD04",
+      "screen": "couponScan",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (2/3)" },
+      "guide": {
+        "title": "바코드를 찍었어요를 눌러 보세요",
+        "detail": "실제로는 휴대폰 쿠폰 바코드를 스캐너에 대요"
+      },
+      "target": { "id": "coupon:scanned", "label": "바코드를 찍었어요를" },
+      "action": { "type": "applyCoupon", "couponId": "drink1000" }
+    },
+    {
+      "id": "PD05",
+      "screen": "couponApplied",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (3/3)" },
+      "guide": { "title": "할인된 금액을 확인하고 다음을 눌러 보세요" },
+      "target": { "id": "coupon:next", "label": "다음을" }
+    },
+    {
+      "id": "PD06",
+      "screen": "paymentMethod",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (1/3)" },
+      "guide": { "title": "신용·체크카드를 눌러 보세요" },
+      "target": { "id": "payment:card", "label": "신용·체크카드를" },
+      "action": { "type": "selectPayment", "value": "card" }
+    },
+    {
+      "id": "PD07",
+      "screen": "cardInsert",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (2/3)" },
+      "guide": {
+        "title": "카드를 넣었어요를 눌러 보세요",
+        "detail": "실제로는 IC칩이 위로 가게 카드를 넣어요"
+      },
+      "target": { "id": "card:inserted", "label": "카드를 넣었어요를" },
+      "action": { "type": "completePayment" }
+    },
+    {
+      "id": "PD08",
+      "screen": "paymentDone",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (3/3)" },
+      "guide": { "title": "대기번호를 확인하고 확인을 눌러 보세요" },
+      "target": { "id": "done:confirm", "label": "확인을" }
+    }
+  ],
+  "waitingNumber": 135,
+  "summary": ["주문 내역 확인 · 카페라떼 1잔", "1,000원 할인 쿠폰 사용", "카드 결제 3,200원"]
+}

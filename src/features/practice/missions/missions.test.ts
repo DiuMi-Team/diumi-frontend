@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { cartTotal, formatWon, itemOptionLabel, orderReducer } from "@/features/order/order";
+import {
+  cartTotal,
+  formatWon,
+  itemOptionLabel,
+  orderReducer,
+  payableTotal,
+} from "@/features/order/order";
 import { orderAt, orderBeforeStep } from "@/features/practice/engine";
-import { cafeBasic, cafeOptions, PRACTICE_MISSIONS } from "@/features/practice/missions";
+import {
+  cafeBasic,
+  cafeCoupon,
+  cafeOptions,
+  PRACTICE_MISSIONS,
+} from "@/features/practice/missions";
 
 describe.each(PRACTICE_MISSIONS.map((mission) => [mission.id, mission] as const))(
   "미션 데이터 %s",
@@ -46,7 +57,7 @@ describe.each(PRACTICE_MISSIONS.map((mission) => [mission.id, mission] as const)
     });
 
     it("완료 화면 요약의 결제 금액이 실제 합계와 같다", () => {
-      const total = formatWon(cartTotal(orderAt(mission, { kind: "complete" }).cart));
+      const total = formatWon(payableTotal(orderAt(mission, { kind: "complete" })));
       expect(mission.summary.some((line) => line.includes(total))).toBe(true);
     });
   },
@@ -83,6 +94,31 @@ describe("카페 옵션 포함 미션", () => {
   it("디자인의 PA02~PA19 화면을 순서대로 거친다", () => {
     expect(cafeOptions.steps.map((step) => step.id)).toEqual(
       Array.from({ length: 18 }, (_, i) => `PA${String(i + 2).padStart(2, "0")}`),
+    );
+  });
+});
+
+describe("카페 쿠폰 미션", () => {
+  it("카페라떼 1잔이 담긴 상태에서 시작한다", () => {
+    const start = orderAt(cafeCoupon, { kind: "intro" });
+    expect(start.dineOption).toBe("takeout");
+    expect(start.cart.map((item) => [item.menuId, itemOptionLabel(item), item.quantity])).toEqual([
+      ["latte", "HOT · Regular", 1],
+    ]);
+    expect(start.couponId).toBeNull();
+  });
+
+  it("1,000원 쿠폰을 써서 4,200원 중 3,200원을 카드로 결제한다", () => {
+    const final = orderAt(cafeCoupon, { kind: "complete" });
+    expect(final.couponId).toBe("drink1000");
+    expect(cartTotal(final.cart)).toBe(4200);
+    expect(payableTotal(final)).toBe(3200);
+    expect(final.paymentMethod).toBe("card");
+  });
+
+  it("디자인의 PD02~PD08 화면을 순서대로 거친다", () => {
+    expect(cafeCoupon.steps.map((step) => step.id)).toEqual(
+      Array.from({ length: 7 }, (_, i) => `PD${String(i + 2).padStart(2, "0")}`),
     );
   });
 });

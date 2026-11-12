@@ -32,10 +32,17 @@ export function ScreenHeading({ title, sub }: ScreenHeadingProps) {
   );
 }
 
-export function PaymentAmount({ amount }: { amount: number }) {
+/** "결제 금액 3,200원 (쿠폰 1,000원 할인)" */
+export function PaymentAmount({ amount, discount = 0 }: { amount: number; discount?: number }) {
   return (
     <>
       결제 금액 <b className="text-text">{formatWon(amount)}</b>
+      {discount > 0 && (
+        <>
+          {" "}
+          <span className="font-bold text-primary">(쿠폰 {formatWon(discount)} 할인)</span>
+        </>
+      )}
     </>
   );
 }

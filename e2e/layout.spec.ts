@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES = ["/", "/help", "/cafe", "/fastfood", "/cafe/real", "/fastfood/real"];
+const ROUTES = [
+  "/",
+  "/help",
+  "/cafe",
+  "/fastfood",
+  "/cafe/real",
+  "/fastfood/real",
+  "/cafe/practice",
+  "/cafe/practice/basic",
+];
 
 for (const route of ROUTES) {
   test(`${route}: 기준 폭을 채우고 넓은 화면에서는 480px로 가운데 정렬한다`, async ({ page }) => {

@@ -1,0 +1,45 @@
+import type { ReactNode } from "react";
+import { formatWon } from "@/features/order/order";
+
+/* 카페 키오스크 화면들이 함께 쓰는 모양 */
+
+export const KIOSK_PRIMARY_CLASS =
+  "flex h-[60px] w-full flex-none items-center justify-center gap-2 rounded-full bg-primary text-21 font-bold text-white-pure";
+
+export const KIOSK_OUTLINE_CLASS =
+  "flex h-14 w-full flex-none items-center justify-center rounded-full border-2 border-primary bg-white text-19 font-bold text-primary";
+
+/** 눌러야 할 곳이 이 묶음 안에 없으면 묶음째 흐리게 하고, 안의 칸은 따로 흐리게 하지 않는다 */
+export function groupDim(targetId: string, ids: readonly string[]) {
+  const containsTarget = ids.includes(targetId);
+  return {
+    groupClass: containsTarget ? "" : "opacity-45",
+    itemInactiveClass: containsTarget ? "opacity-45" : "",
+  };
+}
+
+type ScreenHeadingProps = {
+  title: string;
+  sub?: ReactNode;
+};
+
+export function ScreenHeading({ title, sub }: ScreenHeadingProps) {
+  return (
+    <div>
+      <h2 className="mt-0.5 text-22 font-bold">{title}</h2>
+      {sub && <p className="mt-0.5 text-16 text-text-sub">{sub}</p>}
+    </div>
+  );
+}
+
+export function PaymentAmount({ amount }: { amount: number }) {
+  return (
+    <>
+      결제 금액 <b className="text-text">{formatWon(amount)}</b>
+    </>
+  );
+}
+
+export function Spacer() {
+  return <div className="flex-1" />;
+}

@@ -2,14 +2,17 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeftIcon, HomeIcon } from "@/components/icons/ui-icons";
 
+/** 다른 화면으로 가면 주소, 화면 안에서 상태만 바꾸면(연습모드) 함수 */
+type NavTarget = string | (() => void);
+
 type NavBarProps = {
-  homeHref?: string;
-  backHref: string;
+  home?: NavTarget;
+  back: NavTarget;
   /** 실전 유형 선택 화면은 버튼이 52px로 더 크다 */
   size?: "md" | "lg";
 };
 
-export function NavBar({ homeHref = "/", backHref, size = "md" }: NavBarProps) {
+export function NavBar({ home = "/", back, size = "md" }: NavBarProps) {
   const padding = size === "lg" ? "py-3" : "py-2.5";
   const height = size === "lg" ? "h-[52px]" : "h-12";
 
@@ -18,33 +21,40 @@ export function NavBar({ homeHref = "/", backHref, size = "md" }: NavBarProps) {
       aria-label="화면 이동"
       className={`flex flex-none gap-3 border-b-2 border-gray-2 bg-gray-1 px-5 ${padding}`}
     >
-      <NavLink href={homeHref} className={height}>
+      <NavItem target={home} className={height}>
         <HomeIcon size={22} />
         처음으로
-      </NavLink>
-      <NavLink href={backHref} className={height}>
+      </NavItem>
+      <NavItem target={back} className={height}>
         <ChevronLeftIcon size={22} />
         이전으로
-      </NavLink>
+      </NavItem>
     </nav>
   );
 }
 
-function NavLink({
-  href,
+function NavItem({
+  target,
   className,
   children,
 }: {
-  href: string;
+  target: NavTarget;
   className: string;
   children: ReactNode;
 }) {
+  const itemClass = `flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-primary bg-white text-18 font-bold text-primary ${className}`;
+
+  if (typeof target === "string") {
+    return (
+      <Link href={target} className={itemClass}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      className={`flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-primary bg-white text-18 font-bold text-primary ${className}`}
-    >
+    <button type="button" onClick={target} className={itemClass}>
       {children}
-    </Link>
+    </button>
   );
 }

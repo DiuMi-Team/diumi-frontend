@@ -5,9 +5,11 @@ import { BookIllustration, KioskIllustration } from "@/components/icons/illustra
 type ModeSelectProps = {
   serviceName: string;
   realHref: string;
+  /** 없으면 아직 연습 미션이 없어 준비 중 안내를 띄운다 */
+  practiceHref?: string;
 };
 
-export function ModeSelect({ serviceName, realHref }: ModeSelectProps) {
+export function ModeSelect({ serviceName, realHref, practiceHref }: ModeSelectProps) {
   const illustrationClass = "absolute right-3.5 bottom-2.5";
 
   return (
@@ -30,6 +32,7 @@ export function ModeSelect({ serviceName, realHref }: ModeSelectProps) {
           actionLabel="시작하기"
           tone="mint"
           size="mode"
+          href={practiceHref}
           illustration={<BookIllustration size={116} className={illustrationClass} />}
         />
       </main>

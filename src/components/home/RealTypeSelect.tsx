@@ -16,7 +16,7 @@ export function RealTypeSelect({ chip, compactChip, backHref }: RealTypeSelectPr
   return (
     <>
       <Header right={<HeaderChip compact={compactChip}>{chip}</HeaderChip>} />
-      <NavBar backHref={backHref} size="lg" />
+      <NavBar back={backHref} size="lg" />
       <main className="flex flex-1 flex-col justify-center gap-[18px] p-5">
         <h1 className="mb-1.5 text-center text-32 leading-[1.3] font-bold">
           어떤 방식으로

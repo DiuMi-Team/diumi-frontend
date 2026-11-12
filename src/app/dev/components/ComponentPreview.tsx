@@ -19,9 +19,9 @@ export function ComponentPreview() {
   return (
     <>
       <Header right={<HeaderChip compact>연습 · 카페</HeaderChip>} />
-      <NavBar backHref="/" />
+      <NavBar back="/" />
       <main className="flex flex-1 flex-col gap-3 px-5 pt-3.5 pb-4">
-        <PracticeProgress step={2} detail="아메리카노 2잔 담기 (2/5)" />
+        <PracticeProgress step={2} total={4} detail="아메리카노 2잔 담기 (2/5)" />
         <GuideBubble>차갑게(ICE)를 눌러 보세요</GuideBubble>
         <GuideBubble variant="error" detail="선택은 바뀌지 않았어요">
           다른 곳을 눌렀어요. 주황 테두리의 Large를 눌러 보세요

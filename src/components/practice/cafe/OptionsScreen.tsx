@@ -10,7 +10,7 @@ import {
   type CupSize,
   type Temperature,
 } from "@/features/cafe/catalog";
-import { formatWon, itemPrice } from "@/features/order/order";
+import { formatWon, itemPrice, paidOptionsSummary } from "@/features/order/order";
 
 const QUANTITY_IDS = ["quantity:decrease", "quantity:increase"];
 
@@ -24,14 +24,18 @@ export function OptionsScreen() {
   if (!draft) throw new Error(`${step.id}: 옵션을 고를 메뉴가 없어요. 미션 데이터를 확인해 주세요`);
 
   const quantity = groupDim(step.target.id, QUANTITY_IDS);
+  /* 수량을 이미 바꿨으면 고른 항목처럼 덜 흐리게 보인다 */
+  const quantityGroupClass =
+    quantity.groupClass && draft.quantity !== 1 ? "opacity-90" : quantity.groupClass;
   const menuName = getCafeMenu(draft.menuId).name;
+  const paidSummary = paidOptionsSummary(draft.paidOptions);
 
   return (
     <>
       <h2 className="mt-0.5 text-22 font-bold">{menuName} 옵션</h2>
 
       <div
-        className={`flex h-[60px] items-center justify-between rounded-[18px] bg-gray-1 pr-3 pl-[18px] text-18 font-bold ${quantity.groupClass}`}
+        className={`flex h-[60px] items-center justify-between rounded-[18px] bg-gray-1 pr-3 pl-[18px] text-18 font-bold ${quantityGroupClass}`}
       >
         수량
         <span className="flex items-center gap-3">
@@ -67,7 +71,12 @@ export function OptionsScreen() {
         ))}
       </OptionGroup>
 
-      <ExtraOptionRow id="options:paid" title="유료 옵션" examples="샷·시럽·휘핑" />
+      <ExtraOptionRow
+        id="options:paid"
+        title="유료 옵션"
+        examples="샷·시럽·휘핑"
+        selected={paidSummary || undefined}
+      />
       <ExtraOptionRow id="options:free" title="무료 옵션" examples="얼음·농도·빨대" />
 
       <Spacer />
@@ -158,7 +167,30 @@ function SizeTile({ value, selected }: { value: CupSize; selected: boolean }) {
   );
 }
 
-function ExtraOptionRow({ id, title, examples }: { id: string; title: string; examples: string }) {
+type ExtraOptionRowProps = {
+  id: string;
+  title: string;
+  examples: string;
+  /** 고른 옵션 요약. 예: "휘핑크림 1". 있으면 고른 항목 모양으로 보인다 */
+  selected?: string;
+};
+
+function ExtraOptionRow({ id, title, examples, selected }: ExtraOptionRowProps) {
+  if (selected) {
+    return (
+      <KioskButton
+        id={id}
+        inactiveClassName="opacity-90"
+        className="flex h-14 items-center justify-between rounded-[18px] border-3 border-primary bg-white px-4 text-17 font-bold text-primary"
+      >
+        <span>
+          {title} <span className="text-16 font-medium">{selected}</span>
+        </span>
+        <span className="text-16">변경 ›</span>
+      </KioskButton>
+    );
+  }
+
   return (
     <KioskButton
       id={id}

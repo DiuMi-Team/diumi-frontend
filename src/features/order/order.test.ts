@@ -6,6 +6,7 @@ import {
   formatWon,
   itemOptionLabel,
   orderReducer,
+  paidOptionsSummary,
   type OrderAction,
 } from "@/features/order/order";
 
@@ -21,6 +22,7 @@ describe("주문 상태", () => {
       temperature: null,
       size: "regular",
       quantity: 1,
+      paidOptions: {},
     });
     expect(state.cart).toEqual([]);
   });
@@ -79,6 +81,39 @@ describe("주문 상태", () => {
     expect(() => run([{ type: "completePayment" }])).toThrow();
     const paid = run([{ type: "selectPayment", value: "card" }, { type: "completePayment" }]);
     expect(paid.paid).toBe(true);
+  });
+
+  it("유료 옵션은 잔마다 붙고, 0개로 바꾸면 빠진다", () => {
+    const start: OrderAction[] = [
+      { type: "selectMenu", menuId: "mocha" },
+      { type: "setTemperature", value: "hot" },
+      { type: "setPaidOption", option: "whip", count: 1 },
+    ];
+    expect(run(start).draft?.paidOptions).toEqual({ whip: 1 });
+
+    const two = run([...start, { type: "setQuantity", value: 2 }, { type: "addDraftToCart" }]);
+    expect(cartTotal(two.cart)).toBe((4800 + 500) * 2);
+
+    const removed = run([...start, { type: "setPaidOption", option: "whip", count: 0 }]);
+    expect(removed.draft?.paidOptions).toEqual({});
+  });
+
+  it("유료 옵션은 0 이상의 정수만 받는다", () => {
+    const start: OrderAction = { type: "selectMenu", menuId: "mocha" };
+    expect(() => run([start, { type: "setPaidOption", option: "shot", count: -1 }])).toThrow();
+  });
+
+  it("옵션 이름은 화면에 맞게 길게 또는 짧게 보여 준다", () => {
+    const [item] = run([
+      { type: "selectMenu", menuId: "mocha" },
+      { type: "setTemperature", value: "hot" },
+      { type: "setPaidOption", option: "whip", count: 1 },
+      { type: "setPaidOption", option: "shot", count: 2 },
+      { type: "addDraftToCart" },
+    ]).cart;
+    expect(itemOptionLabel(item)).toBe("HOT · Regular · 샷 추가 2 · 휘핑크림");
+    expect(itemOptionLabel(item, { short: true })).toBe("HOT · Regular · 샷 2 · 휘핑");
+    expect(paidOptionsSummary(item.paidOptions)).toBe("샷 추가 2, 휘핑크림 1");
   });
 
   it("금액은 천 단위 쉼표와 원을 붙인다", () => {

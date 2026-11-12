@@ -28,10 +28,16 @@ export function MenuScreen() {
   const tabs = groupDim(targetId, CATEGORY_IDS);
   const cards = groupDim(targetId, MENU_IDS);
   const isEmpty = order.cart.length === 0;
+  /* 메뉴를 고를 차례면 제목을 보이고, 담기를 마치고 결제로 넘어갈 차례면 결제하기 버튼을 보인다 */
+  const choosingMenu = MENU_IDS.includes(targetId);
 
   return (
     <>
-      {isEmpty && <h2 className="text-22 font-bold">메뉴를 선택해 주세요</h2>}
+      {choosingMenu && (
+        <h2 className="text-22 font-bold">
+          {isEmpty ? "메뉴를 선택해 주세요" : "메뉴를 더 담아 보세요"}
+        </h2>
+      )}
       <section
         aria-label="메뉴판"
         className={`flex flex-col gap-2.5 rounded-3xl bg-gray-1 p-3 ${board.groupClass}`}
@@ -72,7 +78,7 @@ export function MenuScreen() {
         </div>
       </section>
       <CartSummary cart={order.cart} />
-      {!isEmpty && (
+      {!isEmpty && !choosingMenu && (
         <>
           <Spacer />
           <KioskButton id="menu:checkout" className={KIOSK_PRIMARY_CLASS}>
@@ -106,7 +112,8 @@ function CartSummary({ cart }: { cart: CartItem[] }) {
         <span className="font-bold text-text-sub">담은 메뉴</span>
         {cart.map((item, index) => (
           <span key={index}>
-            {getCafeMenu(item.menuId).name} {itemOptionLabel(item)} × {item.quantity}
+            {getCafeMenu(item.menuId).name} {itemOptionLabel(item, { short: true })} ×{" "}
+            {item.quantity}
           </span>
         ))}
       </span>

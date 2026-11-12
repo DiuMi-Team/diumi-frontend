@@ -1,0 +1,200 @@
+{
+  "id": "cafe-options",
+  "service": "cafe",
+  "title": "아메리카노 2잔, 카페모카 1잔 담기",
+  "totalStages": 4,
+  "selectHref": "/cafe/practice",
+  "realHref": "/cafe/real",
+  "intro": {
+    "items": [
+      { "title": "포장으로 주문하기" },
+      { "title": "아메리카노 2잔 담기", "detail": "차갑게(ICE) · Large 사이즈" },
+      { "title": "카페모카 1잔 담기", "detail": "따뜻하게(HOT) · Regular · 휘핑크림 추가" },
+      { "title": "카드로 결제하기" }
+    ],
+    "estimatedMinutes": 5
+  },
+  "steps": [
+    {
+      "id": "PA02",
+      "screen": "dineOption",
+      "progress": { "stage": 1, "detail": "포장 선택" },
+      "guide": { "title": "포장해서 갈래요를 눌러 보세요", "detail": "주황 테두리 버튼이에요" },
+      "target": { "id": "dine:takeout", "label": "포장해서 갈래요를" },
+      "action": { "type": "setDineOption", "value": "takeout" }
+    },
+    {
+      "id": "PA03",
+      "screen": "menu",
+      "progress": { "stage": 2, "detail": "아메리카노 2잔 담기 (1/5)" },
+      "guide": { "title": "아메리카노를 눌러 보세요" },
+      "target": { "id": "menu:americano", "label": "아메리카노를" },
+      "action": { "type": "selectMenu", "menuId": "americano" }
+    },
+    {
+      "id": "PA04",
+      "screen": "options",
+      "progress": { "stage": 2, "detail": "아메리카노 2잔 담기 (2/5)" },
+      "guide": { "title": "차갑게(ICE)를 눌러 보세요" },
+      "target": { "id": "temperature:ice", "label": "차갑게(ICE)를" },
+      "action": { "type": "setTemperature", "value": "ice" }
+    },
+    {
+      "id": "PA05",
+      "screen": "options",
+      "progress": { "stage": 2, "detail": "아메리카노 2잔 담기 (3/5)" },
+      "guide": { "title": "Large를 눌러 보세요", "detail": "큰 사이즈예요 (+500원)" },
+      "target": { "id": "size:large", "label": "Large를" },
+      "action": { "type": "setSize", "value": "large" }
+    },
+    {
+      "id": "PA06",
+      "screen": "options",
+      "progress": { "stage": 2, "detail": "아메리카노 2잔 담기 (4/5)" },
+      "guide": { "title": "＋를 한 번 눌러 2잔으로 만들어 보세요" },
+      "target": { "id": "quantity:increase", "label": "＋를" },
+      "action": { "type": "setQuantity", "value": 2 }
+    },
+    {
+      "id": "PA07",
+      "screen": "options",
+      "progress": { "stage": 2, "detail": "아메리카노 2잔 담기 (5/5)" },
+      "guide": {
+        "title": "선택 완료를 눌러 보세요",
+        "detail": "ICE · Large · 2잔이 맞는지 확인해요"
+      },
+      "target": { "id": "options:confirm", "label": "선택 완료를" },
+      "action": { "type": "addDraftToCart" },
+      "detours": [
+        {
+          "trigger": "quantity:decrease",
+          "action": { "type": "setQuantity", "value": 1 },
+          "guide": {
+            "title": "미션은 2잔이에요. ＋를 한 번 더 눌러 보세요",
+            "detail": "지금은 1잔이 선택되어 있어요"
+          },
+          "fix": {
+            "id": "quantity:increase",
+            "label": "＋를",
+            "action": { "type": "setQuantity", "value": 2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "PA08",
+      "screen": "menu",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (1/6)" },
+      "guide": {
+        "title": "이번엔 카페모카를 눌러 보세요",
+        "detail": "아메리카노 2잔이 아래에 담겼어요"
+      },
+      "target": { "id": "menu:mocha", "label": "카페모카를" },
+      "action": { "type": "selectMenu", "menuId": "mocha" }
+    },
+    {
+      "id": "PA09",
+      "screen": "options",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (2/6)" },
+      "guide": {
+        "title": "따뜻하게(HOT)를 눌러 보세요",
+        "detail": "사이즈 Regular, 수량 1잔은 그대로 두면 돼요"
+      },
+      "target": { "id": "temperature:hot", "label": "따뜻하게(HOT)를" },
+      "action": { "type": "setTemperature", "value": "hot" }
+    },
+    {
+      "id": "PA10",
+      "screen": "options",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (3/6)" },
+      "guide": { "title": "유료 옵션의 추가를 눌러 보세요", "detail": "휘핑크림은 여기에 있어요" },
+      "target": { "id": "options:paid", "label": "유료 옵션의 추가를" }
+    },
+    {
+      "id": "PA11",
+      "screen": "paidOptions",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (4/6)" },
+      "guide": { "title": "휘핑크림의 ＋를 한 번 눌러 보세요" },
+      "target": { "id": "paid:whip:increase", "label": "휘핑크림의 ＋를" },
+      "action": { "type": "setPaidOption", "option": "whip", "count": 1 }
+    },
+    {
+      "id": "PA12",
+      "screen": "paidOptions",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (5/6)" },
+      "guide": {
+        "title": "유료 옵션 선택 완료를 눌러 보세요",
+        "detail": "휘핑크림 1개가 추가됐어요"
+      },
+      "target": { "id": "paidOptions:confirm", "label": "유료 옵션 선택 완료를" }
+    },
+    {
+      "id": "PA13",
+      "screen": "options",
+      "progress": { "stage": 3, "detail": "카페모카 1잔 담기 (6/6)" },
+      "guide": {
+        "title": "선택 완료를 눌러 보세요",
+        "detail": "HOT · Regular · 휘핑크림이 맞는지 확인해요"
+      },
+      "target": { "id": "options:confirm", "label": "선택 완료를" },
+      "action": { "type": "addDraftToCart" }
+    },
+    {
+      "id": "PA14",
+      "screen": "menu",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (1/6)" },
+      "guide": { "title": "결제하기를 눌러 보세요", "detail": "음료 2종류, 모두 3잔이 담겼어요" },
+      "target": { "id": "menu:checkout", "label": "결제하기를" }
+    },
+    {
+      "id": "PA15",
+      "screen": "orderReview",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (2/6)" },
+      "guide": { "title": "주문 내역을 확인하고 다음을 눌러 보세요" },
+      "target": { "id": "review:next", "label": "다음을" }
+    },
+    {
+      "id": "PA16",
+      "screen": "membership",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (3/6)" },
+      "guide": {
+        "title": "적립·쿠폰 없이 진행을 눌러 보세요",
+        "detail": "이번 연습에서는 건너뛰어요"
+      },
+      "target": { "id": "membership:skip", "label": "적립·쿠폰 없이 진행을" }
+    },
+    {
+      "id": "PA17",
+      "screen": "paymentMethod",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (4/6)" },
+      "guide": { "title": "신용·체크카드를 눌러 보세요" },
+      "target": { "id": "payment:card", "label": "신용·체크카드를" },
+      "action": { "type": "selectPayment", "value": "card" }
+    },
+    {
+      "id": "PA18",
+      "screen": "cardInsert",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (5/6)" },
+      "guide": {
+        "title": "카드를 넣었어요를 눌러 보세요",
+        "detail": "실제로는 IC칩이 위로 가게 카드를 넣어요"
+      },
+      "target": { "id": "card:inserted", "label": "카드를 넣었어요를" },
+      "action": { "type": "completePayment" }
+    },
+    {
+      "id": "PA19",
+      "screen": "paymentDone",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (6/6)" },
+      "guide": { "title": "대기번호를 확인하고 확인을 눌러 보세요" },
+      "target": { "id": "done:confirm", "label": "확인을" }
+    }
+  ],
+  "waitingNumber": 133,
+  "summary": [
+    "포장 선택",
+    "아메리카노 ICE · Large 2잔",
+    "카페모카 HOT · Regular · 휘핑크림 1잔",
+    "카드 결제 12,700원"
+  ]
+}

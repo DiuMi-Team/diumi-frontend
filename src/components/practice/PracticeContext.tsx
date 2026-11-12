@@ -2,11 +2,12 @@
 
 import { createContext, use, type ReactNode } from "react";
 import type { OrderState } from "@/features/order/order";
-import type { PracticeMission, PracticeStep } from "@/features/practice/types";
+import type { ActiveStep } from "@/features/practice/engine";
+import type { PracticeMission } from "@/features/practice/types";
 
 type PracticeContextValue = {
   mission: PracticeMission;
-  step: PracticeStep;
+  step: ActiveStep;
   /** 이 화면에 들어왔을 때의 주문 상태 */
   order: OrderState;
   /** 화면 안의 칸을 눌렀다. 눌러야 할 곳이면 다음으로, 아니면 빨간 안내 */
@@ -62,6 +63,7 @@ export function KioskButton({
 }: KioskButtonProps) {
   const { step, tap } = usePractice();
   const isTarget = step.target.id === id;
+  const isLive = isTarget || step.liveIds.includes(id);
   const stateClass = isTarget
     ? `practice-target ${tight ? "practice-target-tight" : ""}`
     : inactiveClassName;
@@ -71,7 +73,7 @@ export function KioskButton({
       type="button"
       aria-label={ariaLabel}
       aria-pressed={pressed}
-      aria-disabled={isTarget ? undefined : true}
+      aria-disabled={isLive ? undefined : true}
       data-practice-target={isTarget ? "" : undefined}
       onClick={() => tap(id)}
       className={`${className} ${stateClass}`}

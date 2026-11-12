@@ -5,6 +5,7 @@ export type PracticeScreen =
   | "dineOption"
   | "menu"
   | "options"
+  | "paidOptions"
   | "orderReview"
   | "membership"
   | "paymentMethod"
@@ -32,6 +33,29 @@ export type PracticeStep = {
   };
   /** 눌러야 할 곳을 눌렀을 때 주문 상태에 적용할 동작. 화면만 넘기면 없다 */
   action?: OrderAction;
+  /** 이 화면에서 미션과 다르게 고를 수 있는 칸 (PX2) */
+  detours?: PracticeDetour[];
+};
+
+/**
+ * 미션과 다르게 고르는 경우. 누르면 선택은 실제로 바뀌고, 바로잡을 때까지 빨간 안내가 뜬다.
+ * 예: 2잔을 담는 단계에서 −를 눌러 1잔이 된 경우 → "미션은 2잔이에요. ＋를 한 번 더 눌러 보세요"
+ */
+export type PracticeDetour = {
+  /** 이 칸을 누르면 미션과 달라진다. 예: "quantity:decrease" */
+  trigger: string;
+  action: OrderAction;
+  /** 빨간 안내 */
+  guide: {
+    title: string;
+    detail?: string;
+  };
+  /** 바로잡는 칸. 누르면 원래 단계로 돌아간다 */
+  fix: {
+    id: string;
+    label: string;
+    action: OrderAction;
+  };
 };
 
 export type PracticeMission = {

@@ -31,3 +31,27 @@ export function getCafeMenu(id: CafeMenuId): CafeMenu {
   if (!menu) throw new Error(`없는 메뉴예요: ${id}`);
   return menu;
 }
+
+export type PaidOptionId = "shot" | "vanilla" | "hazelnut" | "whip";
+
+export type PaidOption = {
+  id: PaidOptionId;
+  name: string;
+  /** 장바구니 요약처럼 좁은 곳에 쓰는 이름 */
+  shortName: string;
+  price: number;
+};
+
+/** 유료 옵션. 잔마다 붙는 가격이다 */
+export const PAID_OPTIONS: readonly PaidOption[] = [
+  { id: "shot", name: "샷 추가", shortName: "샷", price: 500 },
+  { id: "vanilla", name: "바닐라 시럽", shortName: "바닐라", price: 500 },
+  { id: "hazelnut", name: "헤이즐넛 시럽", shortName: "헤이즐넛", price: 500 },
+  { id: "whip", name: "휘핑크림", shortName: "휘핑", price: 500 },
+];
+
+export function getPaidOption(id: PaidOptionId): PaidOption {
+  const option = PAID_OPTIONS.find((item) => item.id === id);
+  if (!option) throw new Error(`없는 유료 옵션이에요: ${id}`);
+  return option;
+}

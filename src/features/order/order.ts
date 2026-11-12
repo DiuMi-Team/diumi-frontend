@@ -1,10 +1,13 @@
 import {
   getCafeMenu,
+  getPaidOption,
   LARGE_EXTRA_PRICE,
+  PAID_OPTIONS,
   SIZE_LABEL,
   TEMPERATURE_LABEL,
   type CafeMenuId,
   type CupSize,
+  type PaidOptionId,
   type Temperature,
 } from "@/features/cafe/catalog";
 
@@ -13,11 +16,15 @@ import {
 export type DineOption = "dineIn" | "takeout";
 export type PaymentMethod = "mobilePay" | "card" | "giftCard";
 
+/** 유료 옵션별 개수. 고른 옵션만 들어 있다 */
+export type PaidOptionCounts = Partial<Record<PaidOptionId, number>>;
+
 export type CartItem = {
   menuId: CafeMenuId;
   temperature: Temperature;
   size: CupSize;
   quantity: number;
+  paidOptions: PaidOptionCounts;
 };
 
 /** 옵션 화면에서 고르는 중인 메뉴. 온도는 손님이 직접 골라야 해서 처음에는 비어 있다 */
@@ -38,6 +45,7 @@ export type OrderAction =
   | { type: "setTemperature"; value: Temperature }
   | { type: "setSize"; value: CupSize }
   | { type: "setQuantity"; value: number }
+  | { type: "setPaidOption"; option: PaidOptionId; count: number }
   | { type: "addDraftToCart" }
   | { type: "selectPayment"; value: PaymentMethod }
   | { type: "completePayment" };
@@ -57,20 +65,29 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "selectMenu":
       return {
         ...state,
-        draft: { menuId: action.menuId, temperature: null, size: "regular", quantity: 1 },
+        draft: {
+          menuId: action.menuId,
+          temperature: null,
+          size: "regular",
+          quantity: 1,
+          paidOptions: {},
+        },
       };
     case "setTemperature":
       return { ...state, draft: updateDraft(state, { temperature: action.value }) };
     case "setSize":
       return { ...state, draft: updateDraft(state, { size: action.value }) };
     case "setQuantity":
-      if (!Number.isInteger(action.value) || action.value < 1) {
-        throw new Error(`수량은 1 이상의 정수여야 해요: ${action.value}`);
-      }
+      assertCount(action.value, 1, "수량");
       return { ...state, draft: updateDraft(state, { quantity: action.value }) };
+    case "setPaidOption": {
+      assertCount(action.count, 0, "유료 옵션 개수");
+      const paidOptions = { ...requireDraft(state).paidOptions, [action.option]: action.count };
+      if (action.count === 0) delete paidOptions[action.option];
+      return { ...state, draft: updateDraft(state, { paidOptions }) };
+    }
     case "addDraftToCart": {
-      const { draft } = state;
-      if (!draft) throw new Error("담을 메뉴를 먼저 골라야 해요");
+      const draft = requireDraft(state);
       if (!draft.temperature) throw new Error("온도를 먼저 골라야 해요");
       return {
         ...state,
@@ -86,16 +103,45 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
   }
 }
 
-function updateDraft(state: OrderState, patch: Partial<DraftItem>): DraftItem {
+function assertCount(value: number, min: number, name: string) {
+  if (!Number.isInteger(value) || value < min) {
+    throw new Error(`${name}는 ${min} 이상의 정수여야 해요: ${value}`);
+  }
+}
+
+function requireDraft(state: OrderState): DraftItem {
   if (!state.draft) throw new Error("옵션을 바꿀 메뉴를 먼저 골라야 해요");
-  return { ...state.draft, ...patch };
+  return state.draft;
+}
+
+function updateDraft(state: OrderState, patch: Partial<DraftItem>): DraftItem {
+  return { ...requireDraft(state), ...patch };
 }
 
 /** 가격에는 온도가 상관없어서 고르는 중인 메뉴에도 쓸 수 있다 */
-type PricedItem = Pick<CartItem, "menuId" | "size" | "quantity">;
+type PricedItem = Pick<CartItem, "menuId" | "size" | "quantity" | "paidOptions">;
+
+/** 고른 유료 옵션을 메뉴판 순서대로 [옵션, 개수]로 돌려준다 */
+export function selectedPaidOptions(counts: PaidOptionCounts) {
+  return PAID_OPTIONS.filter((option) => (counts[option.id] ?? 0) > 0).map(
+    (option) => [option, counts[option.id]!] as const,
+  );
+}
+
+/** 한 잔에 붙는 유료 옵션 금액 */
+export function paidOptionsPrice(counts: PaidOptionCounts): number {
+  return selectedPaidOptions(counts).reduce(
+    (sum, [option, count]) => sum + getPaidOption(option.id).price * count,
+    0,
+  );
+}
 
 export function itemUnitPrice(item: PricedItem): number {
-  return getCafeMenu(item.menuId).price + (item.size === "large" ? LARGE_EXTRA_PRICE : 0);
+  return (
+    getCafeMenu(item.menuId).price +
+    (item.size === "large" ? LARGE_EXTRA_PRICE : 0) +
+    paidOptionsPrice(item.paidOptions)
+  );
 }
 
 export function itemPrice(item: PricedItem): number {
@@ -110,9 +156,23 @@ export function cartCount(cart: readonly CartItem[]): number {
   return cart.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-/** "HOT · Regular" */
-export function itemOptionLabel(item: CartItem): string {
-  return `${TEMPERATURE_LABEL[item.temperature]} · ${SIZE_LABEL[item.size]}`;
+/**
+ * "HOT · Regular · 휘핑크림". 장바구니 요약처럼 좁은 곳은 short로 "휘핑".
+ * 옵션을 2개 이상 고르면 "휘핑크림 2"처럼 개수를 붙인다.
+ */
+export function itemOptionLabel(item: CartItem, { short = false } = {}): string {
+  const extras = selectedPaidOptions(item.paidOptions).map(([option, count]) => {
+    const name = short ? option.shortName : option.name;
+    return count > 1 ? `${name} ${count}` : name;
+  });
+  return [TEMPERATURE_LABEL[item.temperature], SIZE_LABEL[item.size], ...extras].join(" · ");
+}
+
+/** 옵션 화면의 유료 옵션 줄에 쓰는 "휘핑크림 1" */
+export function paidOptionsSummary(counts: PaidOptionCounts): string {
+  return selectedPaidOptions(counts)
+    .map(([option, count]) => `${option.name} ${count}`)
+    .join(", ");
 }
 
 /** 3200 → "3,200원" */

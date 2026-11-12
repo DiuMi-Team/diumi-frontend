@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeStep,
   missMessage,
   nextPosition,
   orderAt,
@@ -65,9 +66,9 @@ describe("연습 엔진 이동", () => {
 
 describe("누르기 판정", () => {
   it("눌러야 할 곳을 누르면 다음 단계로 간다", () => {
-    expect(tap(mission, step(0), "dine:takeout")).toEqual({ kind: "advance", position: step(1) });
+    expect(tap(mission, step(0), "dine:takeout")).toEqual({ kind: "move", position: step(1) });
     expect(tap(mission, step(1), "menu:americano")).toEqual({
-      kind: "advance",
+      kind: "move",
       position: { kind: "complete" },
     });
   });
@@ -102,7 +103,9 @@ describe("단계별 주문 상태", () => {
     const prefilled: PracticeMission = {
       ...mission,
       initialOrder: {
-        cart: [{ menuId: "latte", temperature: "hot", size: "regular", quantity: 1 }],
+        cart: [
+          { menuId: "latte", temperature: "hot", size: "regular", quantity: 1, paidOptions: {} },
+        ],
       },
     };
     expect(orderAt(prefilled, START_POSITION).cart).toHaveLength(1);
@@ -112,5 +115,59 @@ describe("단계별 주문 상태", () => {
   it("stepAt은 단계 화면에서만 단계를 돌려준다", () => {
     expect(stepAt(mission, START_POSITION)).toBeNull();
     expect(stepAt(mission, step(1))?.id).toBe("S2");
+  });
+});
+
+describe("미션과 다르게 고른 경우 (PX2)", () => {
+  const withDetour: PracticeMission = {
+    ...mission,
+    steps: [
+      mission.steps[0],
+      {
+        id: "Q",
+        screen: "options",
+        progress: { stage: 2, detail: "수량" },
+        guide: { title: "선택 완료를 눌러 보세요" },
+        target: { id: "options:confirm", label: "선택 완료를" },
+        detours: [
+          {
+            trigger: "dine:dineIn",
+            action: { type: "setDineOption", value: "dineIn" },
+            guide: { title: "미션은 포장이에요", detail: "지금은 매장이에요" },
+            fix: {
+              id: "dine:takeout",
+              label: "포장을",
+              action: { type: "setDineOption", value: "takeout" },
+            },
+          },
+        ],
+      },
+    ],
+  };
+  const detour: PracticePosition = { kind: "step", index: 1, detour: 0 };
+
+  it("다르게 고르는 칸을 누르면 선택이 바뀌고 바로잡기 안내로 간다", () => {
+    expect(tap(withDetour, step(1), "dine:dineIn")).toEqual({ kind: "move", position: detour });
+    expect(orderAt(withDetour, detour).dineOption).toBe("dineIn");
+  });
+
+  it("바로잡는 중에는 안내와 눌러야 할 곳이 바뀐다", () => {
+    const active = activeStep(withDetour, detour)!;
+    expect(active.correcting).toBe(true);
+    expect(active.guide.title).toBe("미션은 포장이에요");
+    expect(active.target.id).toBe("dine:takeout");
+  });
+
+  it("평소에는 다르게 고르는 칸을 막지 않는다", () => {
+    expect(activeStep(withDetour, step(1))!.liveIds).toEqual(["dine:dineIn"]);
+  });
+
+  it("바로잡으면 원래 단계로 돌아가고, 다른 곳은 miss다", () => {
+    expect(tap(withDetour, detour, "dine:takeout")).toEqual({ kind: "move", position: step(1) });
+    expect(tap(withDetour, detour, "options:confirm")).toEqual({ kind: "miss" });
+  });
+
+  it("바로잡는 중에 이전으로를 누르면 원래 단계로 돌아간다", () => {
+    expect(previousPosition(withDetour, detour)).toEqual(step(1));
   });
 });

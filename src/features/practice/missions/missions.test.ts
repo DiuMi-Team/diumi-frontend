@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cartTotal, formatWon } from "@/features/order/order";
-import { orderAt } from "@/features/practice/engine";
-import { cafeBasic, PRACTICE_MISSIONS } from "@/features/practice/missions";
+import { cartTotal, formatWon, itemOptionLabel, orderReducer } from "@/features/order/order";
+import { orderAt, orderBeforeStep } from "@/features/practice/engine";
+import { cafeBasic, cafeOptions, PRACTICE_MISSIONS } from "@/features/practice/missions";
 
 describe.each(PRACTICE_MISSIONS.map((mission) => [mission.id, mission] as const))(
   "미션 데이터 %s",
@@ -29,6 +29,20 @@ describe.each(PRACTICE_MISSIONS.map((mission) => [mission.id, mission] as const)
 
     it("잘못 눌렀을 때 문구에 쓸 조사가 붙어 있다", () => {
       mission.steps.forEach((step) => expect(step.target.label).toMatch(/[을를]$/));
+      mission.steps
+        .flatMap((step) => step.detours ?? [])
+        .forEach((detour) => expect(detour.fix.label).toMatch(/[을를]$/));
+    });
+
+    it("다르게 고른 것을 바로잡으면 원래 단계의 상태로 정확히 돌아온다", () => {
+      mission.steps.forEach((step, index) => {
+        const before = orderBeforeStep(mission, index);
+        step.detours?.forEach((detour) => {
+          const changed = orderReducer(before, detour.action);
+          expect(changed).not.toEqual(before);
+          expect(orderReducer(changed, detour.fix.action)).toEqual(before);
+        });
+      });
     });
 
     it("완료 화면 요약의 결제 금액이 실제 합계와 같다", () => {
@@ -44,7 +58,7 @@ describe("카페 기본 미션", () => {
     expect(final.dineOption).toBe("takeout");
     expect(final.paymentMethod).toBe("card");
     expect(final.cart).toEqual([
-      { menuId: "americano", temperature: "hot", size: "regular", quantity: 1 },
+      { menuId: "americano", temperature: "hot", size: "regular", quantity: 1, paidOptions: {} },
     ]);
     expect(cartTotal(final.cart)).toBe(3200);
   });
@@ -52,6 +66,23 @@ describe("카페 기본 미션", () => {
   it("디자인의 PC02~PC11 화면을 순서대로 거친다", () => {
     expect(cafeBasic.steps.map((step) => step.id)).toEqual(
       Array.from({ length: 10 }, (_, i) => `PC${String(i + 2).padStart(2, "0")}`),
+    );
+  });
+});
+
+describe("카페 옵션 포함 미션", () => {
+  it("아메리카노 ICE · Large 2잔과 카페모카 HOT · Regular · 휘핑크림 1잔, 12,700원이다", () => {
+    const final = orderAt(cafeOptions, { kind: "complete" });
+    expect(final.cart.map((item) => [item.menuId, itemOptionLabel(item), item.quantity])).toEqual([
+      ["americano", "ICE · Large", 2],
+      ["mocha", "HOT · Regular · 휘핑크림", 1],
+    ]);
+    expect(cartTotal(final.cart)).toBe(12700);
+  });
+
+  it("디자인의 PA02~PA19 화면을 순서대로 거친다", () => {
+    expect(cafeOptions.steps.map((step) => step.id)).toEqual(
+      Array.from({ length: 18 }, (_, i) => `PA${String(i + 2).padStart(2, "0")}`),
     );
   });
 });

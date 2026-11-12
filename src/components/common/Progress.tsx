@@ -30,27 +30,22 @@ function ProgressBars({
   );
 }
 
-const PRACTICE_TOTAL_STEPS = 4;
-
 type PracticeProgressProps = {
   step: number;
+  /** 미션마다 다르다. 기본·쿠폰 미션은 3단계, 옵션 포함 미션은 4단계 */
+  total: number;
   /** 단계 설명. 예: "아메리카노 2잔 담기 (2/5)" */
   detail?: ReactNode;
 };
 
-export function PracticeProgress({ step, detail }: PracticeProgressProps) {
+export function PracticeProgress({ step, total, detail }: PracticeProgressProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="text-16 font-bold">
-        {step}단계 / 총 {PRACTICE_TOTAL_STEPS}단계{" "}
+        {step}단계 / 총 {total}단계{" "}
         {detail && <span className="font-medium text-text-sub">· {detail}</span>}
       </div>
-      <ProgressBars
-        current={step}
-        total={PRACTICE_TOTAL_STEPS}
-        label="연습 진행 단계"
-        gapClass="gap-1.5"
-      />
+      <ProgressBars current={step} total={total} label="연습 진행 단계" gapClass="gap-1.5" />
     </div>
   );
 }

@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import {
+  cartCount,
+  cartTotal,
+  EMPTY_ORDER,
+  formatWon,
+  itemOptionLabel,
+  orderReducer,
+  type OrderAction,
+} from "@/features/order/order";
+
+function run(actions: OrderAction[]) {
+  return actions.reduce(orderReducer, EMPTY_ORDER);
+}
+
+describe("주문 상태", () => {
+  it("메뉴를 고르면 온도는 비어 있고 Regular · 1잔으로 시작한다", () => {
+    const state = run([{ type: "selectMenu", menuId: "americano" }]);
+    expect(state.draft).toEqual({
+      menuId: "americano",
+      temperature: null,
+      size: "regular",
+      quantity: 1,
+    });
+    expect(state.cart).toEqual([]);
+  });
+
+  it("선택 완료를 누르면 고르던 메뉴가 장바구니로 간다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setTemperature", value: "ice" },
+      { type: "addDraftToCart" },
+    ]);
+    expect(state.draft).toBeNull();
+    expect(state.cart).toHaveLength(1);
+    expect(itemOptionLabel(state.cart[0])).toBe("ICE · Regular");
+  });
+
+  it("Large는 500원, 수량은 곱해서 계산한다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setSize", value: "large" },
+      { type: "setQuantity", value: 2 },
+      { type: "setTemperature", value: "hot" },
+      { type: "addDraftToCart" },
+      { type: "selectMenu", menuId: "mocha" },
+      { type: "setTemperature", value: "ice" },
+      { type: "addDraftToCart" },
+    ]);
+    expect(cartTotal(state.cart)).toBe((3200 + 500) * 2 + 4800);
+    expect(cartCount(state.cart)).toBe(3);
+  });
+
+  it("이전 상태를 바꾸지 않는다", () => {
+    const before = run([{ type: "selectMenu", menuId: "latte" }]);
+    const snapshot = structuredClone(before);
+    orderReducer(before, { type: "setTemperature", value: "ice" });
+    expect(before).toEqual(snapshot);
+  });
+
+  it("고르던 메뉴 없이 옵션을 바꾸거나 담으면 오류를 낸다", () => {
+    expect(() => run([{ type: "setTemperature", value: "ice" }])).toThrow();
+    expect(() => run([{ type: "addDraftToCart" }])).toThrow();
+  });
+
+  it("온도를 고르지 않으면 담을 수 없다", () => {
+    expect(() =>
+      run([{ type: "selectMenu", menuId: "americano" }, { type: "addDraftToCart" }]),
+    ).toThrow("온도");
+  });
+
+  it("수량은 1 이상의 정수만 받는다", () => {
+    const start: OrderAction = { type: "selectMenu", menuId: "americano" };
+    expect(() => run([start, { type: "setQuantity", value: 0 }])).toThrow();
+    expect(() => run([start, { type: "setQuantity", value: 1.5 }])).toThrow();
+  });
+
+  it("결제 방법 없이 결제를 끝낼 수 없다", () => {
+    expect(() => run([{ type: "completePayment" }])).toThrow();
+    const paid = run([{ type: "selectPayment", value: "card" }, { type: "completePayment" }]);
+    expect(paid.paid).toBe(true);
+  });
+
+  it("금액은 천 단위 쉼표와 원을 붙인다", () => {
+    expect(formatWon(3200)).toBe("3,200원");
+    expect(formatWon(12700)).toBe("12,700원");
+    expect(formatWon(0)).toBe("0원");
+  });
+});

@@ -1,4 +1,4 @@
-import type { CafeMenuId } from "@/features/cafe/catalog";
+import type { CafeMenuId, PaidOptionId } from "@/features/cafe/catalog";
 
 /* 키오스크 화면 그림. design/screens의 SVG를 그대로 옮겼다. */
 
@@ -254,6 +254,48 @@ export function CardInsertIcon({ size }: IconProps) {
       <rect x="24" y="8" width="8" height="10" rx="2" fill="#F5A65B" />
       <path d="M8 44h48v12H8z" fill="#3D3531" />
       <rect x="16" y="48" width="32" height="4" rx="2" fill="#FDFDFD" opacity=".6" />
+    </svg>
+  );
+}
+
+/** 유료 옵션 그림 (샷·바닐라 시럽·헤이즐넛 시럽·휘핑크림) */
+export function PaidOptionIcon({ option, size }: IconProps & { option: PaidOptionId }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      {option === "shot" && (
+        <>
+          <path d="M16 22h28v22a12 12 0 0 1-12 12h-4a12 12 0 0 1-12-12z" fill="#3D3531" />
+          <path d="M44 28h4a7 7 0 0 1 0 14h-4" stroke="#3D3531" strokeWidth="4" fill="none" />
+          <path
+            d="M24 8c-3 4 3 6 0 10M34 8c-3 4 3 6 0 10"
+            stroke="#F5A65B"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </>
+      )}
+      {(option === "vanilla" || option === "hazelnut") && (
+        <>
+          <rect x="26" y="4" width="12" height="10" rx="3" fill="#3D3531" />
+          <path
+            d="M24 14h16l6 10v30a5 5 0 0 1-5 5H23a5 5 0 0 1-5-5V24z"
+            fill={option === "vanilla" ? "#B9E6E8" : "#F5A65B"}
+          />
+          <rect x="22" y="32" width="20" height="12" rx="3" fill="#FDFDFD" />
+        </>
+      )}
+      {option === "whip" && (
+        <>
+          <path
+            d="M14 36c-2-10 6-14 12-12 0-10 12-14 18-6 8 0 10 10 6 18z"
+            fill="#FDFDFD"
+            stroke="#DFEBEC"
+            strokeWidth="3"
+          />
+          <path d="M12 36h40l-5 20a4 4 0 0 1-4 3H21a4 4 0 0 1-4-3z" fill="#F5A65B" />
+        </>
+      )}
     </svg>
   );
 }

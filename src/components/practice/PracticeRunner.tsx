@@ -14,12 +14,12 @@ import { MissionComplete } from "@/components/practice/MissionComplete";
 import { MissionIntro } from "@/components/practice/MissionIntro";
 import { PracticeProvider } from "@/components/practice/PracticeContext";
 import {
+  activeStep,
   missMessage,
   nextPosition,
   orderAt,
   previousPosition,
   START_POSITION,
-  stepAt,
   tap,
   type PracticePosition,
 } from "@/features/practice/engine";
@@ -80,7 +80,7 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
     );
   }
 
-  const step = stepAt(mission, position)!;
+  const step = activeStep(mission, position)!;
   const Screen = CAFE_SCREENS[step.screen];
 
   return (
@@ -100,6 +100,10 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
             <GuideBubble variant="error" detail="선택은 바뀌지 않았어요">
               {missMessage(step)}
             </GuideBubble>
+          ) : step.correcting ? (
+            <GuideBubble variant="error" detail={step.guide.detail}>
+              {step.guide.title}
+            </GuideBubble>
           ) : (
             <GuideBubble detail={step.guide.detail}>{step.guide.title}</GuideBubble>
           )}
@@ -111,7 +115,7 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
             order: orderAt(mission, position),
             tap: (targetId) => {
               const result = tap(mission, position, targetId);
-              if (result.kind === "advance") move(result.position);
+              if (result.kind === "move") move(result.position);
               else setMissed(true);
             },
           }}

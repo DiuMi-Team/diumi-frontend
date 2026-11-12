@@ -4,13 +4,20 @@ import type { PracticeMission, PracticeStep } from "@/features/practice/types";
 /**
  * 연습 진행 위치.
  * - intro: 오늘의 미션
- * - step: steps[index] 화면
+ * - step: steps[index] 화면. detour가 있으면 미션과 다르게 골라 바로잡는 중이다
  * - complete: 연습 완료
  */
 export type PracticePosition =
-  { kind: "intro" } | { kind: "step"; index: number } | { kind: "complete" };
+  { kind: "intro" } | { kind: "step"; index: number; detour?: number } | { kind: "complete" };
 
 export const START_POSITION: PracticePosition = { kind: "intro" };
+
+/** 지금 화면에 보여 줄 단계. 바로잡는 중이면 안내와 눌러야 할 곳이 바로잡기용으로 바뀐다 */
+export type ActiveStep = PracticeStep & {
+  correcting: boolean;
+  /** 눌러야 할 곳은 아니지만 누르면 선택이 바뀌는 칸. 흐리게 막지 않는다 */
+  liveIds: string[];
+};
 
 export function initialOrder(mission: PracticeMission): OrderState {
   return { ...EMPTY_ORDER, ...mission.initialOrder };
@@ -33,15 +40,50 @@ export function orderAt(mission: PracticeMission, position: PracticePosition): O
   switch (position.kind) {
     case "intro":
       return initialOrder(mission);
-    case "step":
-      return orderBeforeStep(mission, position.index);
+    case "step": {
+      const before = orderBeforeStep(mission, position.index);
+      const detour = detourAt(mission, position);
+      return detour ? orderReducer(before, detour.action) : before;
+    }
     case "complete":
       return orderBeforeStep(mission, mission.steps.length);
   }
 }
 
+function detourAt(mission: PracticeMission, position: PracticePosition) {
+  if (position.kind !== "step" || position.detour === undefined) return null;
+  const detour = mission.steps[position.index].detours?.[position.detour];
+  if (!detour) throw new Error(`없는 detour예요: ${position.index}/${position.detour}`);
+  return detour;
+}
+
 export function stepAt(mission: PracticeMission, position: PracticePosition): PracticeStep | null {
   return position.kind === "step" ? mission.steps[position.index] : null;
+}
+
+export function activeStep(
+  mission: PracticeMission,
+  position: PracticePosition,
+): ActiveStep | null {
+  const step = stepAt(mission, position);
+  if (!step) return null;
+
+  const detour = detourAt(mission, position);
+  if (detour) {
+    return {
+      ...step,
+      guide: detour.guide,
+      target: { id: detour.fix.id, label: detour.fix.label },
+      action: undefined,
+      correcting: true,
+      liveIds: [],
+    };
+  }
+  return {
+    ...step,
+    correcting: false,
+    liveIds: step.detours?.map((item) => item.trigger) ?? [],
+  };
 }
 
 export function nextPosition(
@@ -69,26 +111,45 @@ export function previousPosition(
     case "intro":
       return null;
     case "step":
+      if (position.detour !== undefined) return { kind: "step", index: position.index };
       return position.index === 0 ? START_POSITION : { kind: "step", index: position.index - 1 };
     case "complete":
       return { kind: "step", index: mission.steps.length - 1 };
   }
 }
 
-export type TapResult = { kind: "advance"; position: PracticePosition } | { kind: "miss" };
+export type TapResult = { kind: "move"; position: PracticePosition } | { kind: "miss" };
 
-/** 화면의 무언가를 눌렀을 때. 눌러야 할 곳이면 다음으로, 아니면 선택을 바꾸지 않고 miss */
+/**
+ * 화면의 무언가를 눌렀을 때.
+ * - 눌러야 할 곳: 다음 단계로 (바로잡는 중이면 원래 단계로)
+ * - 미션과 다르게 고르는 칸: 바로잡기 안내로
+ * - 그 밖: 선택을 바꾸지 않고 miss
+ */
 export function tap(
   mission: PracticeMission,
   position: PracticePosition,
   targetId: string,
 ): TapResult {
-  const step = stepAt(mission, position);
-  if (!step || step.target.id !== targetId) return { kind: "miss" };
-  return { kind: "advance", position: nextPosition(mission, position) };
+  if (position.kind !== "step") return { kind: "miss" };
+  const step = mission.steps[position.index];
+
+  if (position.detour !== undefined) {
+    return detourAt(mission, position)?.fix.id === targetId
+      ? { kind: "move", position: { kind: "step", index: position.index } }
+      : { kind: "miss" };
+  }
+  if (step.target.id === targetId) {
+    return { kind: "move", position: nextPosition(mission, position) };
+  }
+  const detour = step.detours?.findIndex((item) => item.trigger === targetId) ?? -1;
+  if (detour >= 0) {
+    return { kind: "move", position: { kind: "step", index: position.index, detour } };
+  }
+  return { kind: "miss" };
 }
 
 /** 잘못 눌렀을 때 빨간 말풍선 문구 */
-export function missMessage(step: PracticeStep): string {
+export function missMessage(step: Pick<PracticeStep, "target">): string {
   return `다른 곳을 눌렀어요. 주황 테두리의 ${step.target.label} 눌러 보세요`;
 }

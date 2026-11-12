@@ -1,4 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  expectSeniorFriendly,
+  practiceAlert,
+  pressDimmed,
+  startMission,
+  target,
+} from "./practice-helpers";
 
 /** 카페 기본 미션(PC01~PC12)에서 차례로 누를 곳과 그 화면의 안내 문구 */
 const WALKTHROUGH = [
@@ -14,22 +21,8 @@ const WALKTHROUGH = [
   { guide: "대기번호를 확인하고 확인을 눌러 보세요", press: "확인" },
 ];
 
-function target(page: Page) {
-  return page.locator("[data-practice-target]");
-}
-
-/**
- * 흐린 칸은 aria-disabled라 Playwright가 누를 수 없는 것으로 보고 기다린다.
- * 실제 사용자는 누를 수 있고 그때 빨간 안내가 떠야 하므로 force로 누른다.
- */
-async function pressDimmed(page: Page, name: string) {
-  await page.getByRole("button", { name }).click({ force: true });
-}
-
-async function startMission(page: Page) {
-  await page.goto("/cafe/practice/basic");
-  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
-  await page.getByRole("button", { name: "연습 시작하기" }).click();
+async function startBasic(page: Page) {
+  await startMission(page, "/cafe/practice/basic");
 }
 
 test("모드 선택에서 연습모드 → 미션 선택 → 카페 기본 미션으로 들어간다", async ({ page }) => {
@@ -48,7 +41,7 @@ test("모드 선택에서 연습모드 → 미션 선택 → 카페 기본 미�
 
 test("아직 만들지 않은 미션은 준비 중 안내를 띄운다", async ({ page }) => {
   await page.goto("/cafe/practice");
-  for (const name of [/카페모카 1잔 담기/, /쿠폰 쓰고 결제하기/]) {
+  for (const name of [/쿠폰 쓰고 결제하기/]) {
     await page.getByRole("button", { name }).click();
     const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
     await expect(dialog).toBeVisible();
@@ -58,7 +51,7 @@ test("아직 만들지 않은 미션은 준비 중 안내를 띄운다", async (
 });
 
 test("안내를 따라 처음부터 끝까지 완주하고 3,200원을 결제한다", async ({ page }) => {
-  await startMission(page);
+  await startBasic(page);
 
   for (const [index, { guide, press }] of WALKTHROUGH.entries()) {
     await expect(page.getByText(guide)).toBeVisible();
@@ -87,7 +80,7 @@ test("안내를 따라 처음부터 끝까지 완주하고 3,200원을 결제한
 test("눌러야 할 곳만 강조하고 나머지는 흐리게 보인다", async ({ page }) => {
   // 강조 테두리는 1.5초마다 깜빡이므로, 움직임 줄이기 설정에서 멈춘 상태의 색을 확인한다
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await startMission(page);
+  await startBasic(page);
 
   const highlighted = target(page);
   await expect(highlighted).toHaveCSS("outline-style", "solid");
@@ -100,16 +93,16 @@ test("눌러야 할 곳만 강조하고 나머지는 흐리게 보인다", async
 });
 
 test("강조 테두리는 1.5초 간격으로 깜빡인다", async ({ page }) => {
-  await startMission(page);
+  await startBasic(page);
   await expect(target(page)).toHaveCSS("animation-duration", "1.5s");
   await expect(target(page)).toHaveCSS("animation-iteration-count", "infinite");
 });
 
 test("다른 곳을 누르면 빨간 안내가 뜨고 선택은 바뀌지 않는다", async ({ page }) => {
-  await startMission(page);
+  await startBasic(page);
 
   await pressDimmed(page, "매장에서 먹어요");
-  const alert = page.getByTestId("app-shell").getByRole("alert");
+  const alert = practiceAlert(page);
   await expect(alert).toContainText(
     "다른 곳을 눌렀어요. 주황 테두리의 포장해서 갈래요를 눌러 보세요",
   );
@@ -122,7 +115,7 @@ test("다른 곳을 누르면 빨간 안내가 뜨고 선택은 바뀌지 않는
 });
 
 test("이전으로는 한 단계 전으로 돌아가고 그 단계의 선택도 되돌린다", async ({ page }) => {
-  await startMission(page);
+  await startBasic(page);
   for (const { press } of WALKTHROUGH.slice(0, 4)) {
     await page.getByRole("button", { name: press, exact: true }).click();
   }
@@ -140,7 +133,7 @@ test("이전으로는 한 단계 전으로 돌아가고 그 단계의 선택도 
 });
 
 test("처음으로를 누르면 확인 창이 뜨고, 계속하거나 홈으로 갈 수 있다", async ({ page }) => {
-  await startMission(page);
+  await startBasic(page);
   await page.getByRole("button", { name: "처음으로" }).click();
 
   const dialog = page.getByRole("dialog", { name: "연습을 그만할까요?" });
@@ -157,26 +150,11 @@ test("처음으로를 누르면 확인 창이 뜨고, 계속하거나 홈으로 
 test("모든 단계에서 글자는 16px 이상, 터치 영역은 48px 이상이고 가로로 넘치지 않는다", async ({
   page,
 }) => {
-  await startMission(page);
+  await startBasic(page);
 
   for (const { guide } of WALKTHROUGH) {
     await expect(page.getByText(guide)).toBeVisible();
-    const problems = await page.evaluate(() => {
-      const smallText = [...document.querySelectorAll("main *")]
-        .filter((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim()))
-        .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 16)
-        .map((el) => el.textContent);
-      const smallTargets = [...document.querySelectorAll("main a, main button")]
-        .filter((el) => {
-          const rect = el.getBoundingClientRect();
-          const hitArea = parseFloat(getComputedStyle(el, "::after").height) || 0;
-          return Math.max(rect.height, hitArea) < 48;
-        })
-        .map((el) => el.getAttribute("aria-label") ?? el.textContent);
-      const overflow = document.documentElement.scrollWidth > document.documentElement.clientWidth;
-      return { smallText, smallTargets, overflow };
-    });
-    expect(problems).toEqual({ smallText: [], smallTargets: [], overflow: false });
+    await expectSeniorFriendly(page);
     await target(page).click();
   }
 });

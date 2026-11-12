@@ -7,6 +7,8 @@ import {
   itemOptionLabel,
   orderReducer,
   paidOptionsSummary,
+  payableTotal,
+  couponDiscount,
   type OrderAction,
 } from "@/features/order/order";
 
@@ -114,6 +116,37 @@ describe("주문 상태", () => {
     expect(itemOptionLabel(item)).toBe("HOT · Regular · 샷 추가 2 · 휘핑크림");
     expect(itemOptionLabel(item, { short: true })).toBe("HOT · Regular · 샷 2 · 휘핑");
     expect(paidOptionsSummary(item.paidOptions)).toBe("샷 추가 2, 휘핑크림 1");
+  });
+
+  it("쿠폰을 쓰면 결제할 금액에서 할인된다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "latte" },
+      { type: "setTemperature", value: "hot" },
+      { type: "addDraftToCart" },
+      { type: "applyCoupon", couponId: "drink1000" },
+    ]);
+    expect(cartTotal(state.cart)).toBe(4200);
+    expect(couponDiscount(state)).toBe(1000);
+    expect(payableTotal(state)).toBe(3200);
+  });
+
+  it("쿠폰 할인은 주문 금액보다 크지 않고, 빈 장바구니에는 쓸 수 없다", () => {
+    expect(() => run([{ type: "applyCoupon", couponId: "drink1000" }])).toThrow();
+    const cheap = {
+      ...EMPTY_ORDER,
+      cart: [
+        {
+          menuId: "americano" as const,
+          temperature: "hot" as const,
+          size: "regular" as const,
+          quantity: 1,
+          paidOptions: {},
+        },
+      ],
+      couponId: "drink1000" as const,
+    };
+    expect(payableTotal({ ...cheap, cart: cheap.cart })).toBe(2200);
+    expect(couponDiscount({ cart: [], couponId: "drink1000" })).toBe(0);
   });
 
   it("금액은 천 단위 쉼표와 원을 붙인다", () => {

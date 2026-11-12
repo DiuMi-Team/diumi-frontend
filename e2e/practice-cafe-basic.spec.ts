@@ -39,17 +39,6 @@ test("모드 선택에서 연습모드 → 미션 선택 → 카페 기본 미�
   await expect(page).toHaveURL("/cafe/practice");
 });
 
-test("아직 만들지 않은 미션은 준비 중 안내를 띄운다", async ({ page }) => {
-  await page.goto("/cafe/practice");
-  for (const name of [/쿠폰 쓰고 결제하기/]) {
-    await page.getByRole("button", { name }).click();
-    const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
-    await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "확인" }).click();
-    await expect(dialog).toBeHidden();
-  }
-});
-
 test("안내를 따라 처음부터 끝까지 완주하고 3,200원을 결제한다", async ({ page }) => {
   await startBasic(page);
 

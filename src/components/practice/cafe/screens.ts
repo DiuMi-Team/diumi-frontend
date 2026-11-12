@@ -1,5 +1,7 @@
 import type { ComponentType } from "react";
 import { CardInsertScreen } from "@/components/practice/cafe/CardInsertScreen";
+import { CouponAppliedScreen } from "@/components/practice/cafe/CouponAppliedScreen";
+import { CouponScanScreen } from "@/components/practice/cafe/CouponScanScreen";
 import { DineOptionScreen } from "@/components/practice/cafe/DineOptionScreen";
 import { MembershipScreen } from "@/components/practice/cafe/MembershipScreen";
 import { MenuScreen } from "@/components/practice/cafe/MenuScreen";
@@ -18,6 +20,8 @@ export const CAFE_SCREENS: Record<PracticeScreen, ComponentType> = {
   paidOptions: PaidOptionsScreen,
   orderReview: OrderReviewScreen,
   membership: MembershipScreen,
+  couponScan: CouponScanScreen,
+  couponApplied: CouponAppliedScreen,
   paymentMethod: PaymentMethodScreen,
   cardInsert: CardInsertScreen,
   paymentDone: PaymentDoneScreen,

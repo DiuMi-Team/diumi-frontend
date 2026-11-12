@@ -1,11 +1,14 @@
 import {
   getCafeMenu,
+  getCoupon,
   getPaidOption,
   LARGE_EXTRA_PRICE,
   PAID_OPTIONS,
   SIZE_LABEL,
   TEMPERATURE_LABEL,
   type CafeMenuId,
+  type Coupon,
+  type CouponId,
   type CupSize,
   type PaidOptionId,
   type Temperature,
@@ -35,6 +38,8 @@ export type OrderState = {
   cart: CartItem[];
   /** 선택 완료를 누르면 장바구니로 간다 */
   draft: DraftItem | null;
+  /** 쓴 할인 쿠폰. 한 주문에 하나만 쓸 수 있다 */
+  couponId: CouponId | null;
   paymentMethod: PaymentMethod | null;
   paid: boolean;
 };
@@ -47,6 +52,7 @@ export type OrderAction =
   | { type: "setQuantity"; value: number }
   | { type: "setPaidOption"; option: PaidOptionId; count: number }
   | { type: "addDraftToCart" }
+  | { type: "applyCoupon"; couponId: CouponId }
   | { type: "selectPayment"; value: PaymentMethod }
   | { type: "completePayment" };
 
@@ -54,6 +60,7 @@ export const EMPTY_ORDER: OrderState = {
   dineOption: null,
   cart: [],
   draft: null,
+  couponId: null,
   paymentMethod: null,
   paid: false,
 };
@@ -95,6 +102,10 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         draft: null,
       };
     }
+    case "applyCoupon":
+      if (state.cart.length === 0) throw new Error("쿠폰은 메뉴를 담은 뒤에 쓸 수 있어요");
+      getCoupon(action.couponId);
+      return { ...state, couponId: action.couponId };
     case "selectPayment":
       return { ...state, paymentMethod: action.value };
     case "completePayment":
@@ -150,6 +161,21 @@ export function itemPrice(item: PricedItem): number {
 
 export function cartTotal(cart: readonly CartItem[]): number {
   return cart.reduce((sum, item) => sum + itemPrice(item), 0);
+}
+
+export function appliedCoupon(state: Pick<OrderState, "couponId">): Coupon | null {
+  return state.couponId ? getCoupon(state.couponId) : null;
+}
+
+/** 쿠폰 할인. 주문 금액보다 클 수 없다 */
+export function couponDiscount(state: Pick<OrderState, "cart" | "couponId">): number {
+  const coupon = appliedCoupon(state);
+  return coupon ? Math.min(coupon.discount, cartTotal(state.cart)) : 0;
+}
+
+/** 실제로 결제할 금액 = 주문 금액 − 쿠폰 할인 */
+export function payableTotal(state: Pick<OrderState, "cart" | "couponId">): number {
+  return cartTotal(state.cart) - couponDiscount(state);
 }
 
 export function cartCount(cart: readonly CartItem[]): number {

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/*
+ * 키가 작은 화면. 휴대폰 브라우저는 주소창·툴바 때문에 보이는 높이가 650~700px이라
+ * 디자인(844px)보다 여백·카드 높이·그림을 줄인다. 글자 크기와 48px 터치 영역은 줄이지 않는다.
+ */
+@custom-variant short (@media (max-height: 740px));
+
 /* CLAUDE.md의 색상 토큰. 기본 팔레트를 지워 토큰 밖의 색을 쓰지 못하게 한다. */
 @theme {
   --color-*: initial;
@@ -36,6 +42,7 @@
   --text-29: 29px;
   --text-30: 30px;
   --text-32: 32px;
+  --text-56: 56px;
   --text-68: 68px;
   --text-72: 72px;
   --text-76: 76px;
@@ -59,6 +66,35 @@
     cursor: pointer;
   }
 
+  /*
+   * 손가락으로 누르는 동안 살짝 작아지고 어두워진다. 휴대폰 기본 회색 터치 표시는 끈다.
+   * 아이폰은 touchstart 리스너가 있어야 :active가 적용돼서 TouchActiveSupport가 등록한다.
+   */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a,
+  button {
+    touch-action: manipulation;
+    transition:
+      transform 0.1s ease-out,
+      filter 0.1s ease-out;
+  }
+
+  a:active,
+  button:active {
+    transform: scale(0.97);
+    filter: brightness(0.92);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    a:active,
+    button:active {
+      transform: none;
+    }
+  }
+
   :focus-visible {
     outline: 3px solid var(--color-primary);
     outline-offset: 2px;
@@ -79,6 +115,8 @@
     0 0 0 var(--practice-offset) var(--color-white),
     0 0 18px 6px rgb(245 166 91 / 0.55);
   animation: practice-pulse 1.5s ease-in-out infinite;
+  /* 자동 스크롤로 보여 줄 때 테두리와 빛이 화면 끝에 잘리지 않게 */
+  scroll-margin: 24px;
 }
 
 .practice-target-tight {

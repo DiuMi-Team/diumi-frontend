@@ -20,13 +20,13 @@ export function CouponAppliedScreen() {
 
   return (
     <>
-      <div className="flex flex-col items-center gap-2.5 pt-2">
-        <span className="flex size-20 items-center justify-center rounded-full bg-mint-light text-mint">
+      <div className="flex flex-col items-center gap-2.5 pt-2 short:gap-1.5 short:pt-0">
+        <span className="flex size-20 items-center justify-center rounded-full bg-mint-light text-mint short:size-14 short:[&>svg]:size-9">
           <CheckIcon size={48} />
         </span>
         <h2 className="text-26 font-bold">쿠폰이 적용되었어요</h2>
       </div>
-      <div className="flex flex-col gap-2.5 rounded-3xl bg-gray-1 px-[18px] py-4 text-17">
+      <div className="flex flex-col gap-2.5 rounded-3xl bg-gray-1 px-[18px] py-4 text-17 short:gap-1.5 short:py-3">
         <div className="flex items-center gap-3 border-b-2 border-white pb-3">
           <CouponIcon size={40} tone="orange" />
           <span className="flex flex-1 flex-col">

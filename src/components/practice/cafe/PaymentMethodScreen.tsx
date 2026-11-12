@@ -28,7 +28,7 @@ export function PaymentMethodScreen() {
           <KioskButton
             key={value}
             id={id}
-            className="flex h-[84px] items-center gap-3.5 rounded-3xl bg-gray-1 px-[18px] text-left text-20 font-bold"
+            className="flex h-[84px] items-center gap-3.5 rounded-3xl bg-gray-1 px-[18px] text-left text-20 font-bold short:h-[68px] short:[&>svg]:size-11"
           >
             {icon}
             <span className="flex-1">{name}</span>

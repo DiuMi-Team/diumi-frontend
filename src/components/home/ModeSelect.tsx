@@ -15,7 +15,7 @@ export function ModeSelect({ serviceName, realHref, practiceHref }: ModeSelectPr
   return (
     <>
       <Header right={<HeaderChip>{serviceName}</HeaderChip>} />
-      <main className="flex flex-1 flex-col justify-center gap-5 px-5 py-6">
+      <main className="flex min-h-0 overflow-y-auto *:shrink-0 flex-1 flex-col justify-center-safe gap-5 px-5 py-6 short:gap-3.5 short:py-4">
         <h1 className="mb-2 text-center text-32 leading-[1.3] font-bold">어떻게 해볼까요?</h1>
         <ChoiceCard
           title="실전모드"

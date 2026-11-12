@@ -16,8 +16,14 @@ type ChoiceCardProps = {
 };
 
 const sizeClass = {
-  mode: { card: "h-[200px] px-6 pt-[26px] pb-[22px]", title: "text-32" },
-  type: { card: "h-[190px] px-6 pt-6 pb-5", title: "text-29" },
+  mode: {
+    card: "h-[200px] px-6 pt-[26px] pb-[22px] short:h-[176px] short:pt-5 short:pb-4",
+    title: "text-32",
+  },
+  type: {
+    card: "h-[190px] px-6 pt-6 pb-5 short:h-[164px] short:pt-5 short:pb-4",
+    title: "text-29",
+  },
 };
 
 export function ChoiceCard({

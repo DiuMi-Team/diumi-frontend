@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_KR } from "next/font/google";
+import { TouchActiveSupport } from "@/components/common/TouchActiveSupport";
 import "./globals.css";
 
 const ibmPlexSansKr = IBM_Plex_Sans_KR({
@@ -26,10 +27,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full bg-gray-1 font-sans text-16 text-text">
         <div
           data-testid="app-shell"
-          className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-white"
+          className="mx-auto flex h-dvh w-full max-w-[480px] flex-col bg-white"
         >
           {children}
         </div>
+        <TouchActiveSupport />
       </body>
     </html>
   );

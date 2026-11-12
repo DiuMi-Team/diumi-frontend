@@ -17,7 +17,7 @@ const VOICE_STEPS = [
 
 function StepList({ steps, numberClass }: { steps: string[]; numberClass: string }) {
   return (
-    <ol className="flex flex-col gap-2.5 text-17 leading-[1.45]">
+    <ol className="flex flex-col gap-2.5 text-17 leading-[1.45] short:gap-1.5">
       {steps.map((step, index) => (
         <li key={step} className="flex gap-2.5">
           <span
@@ -42,7 +42,9 @@ function HelpSection({
   children: ReactNode;
 }) {
   return (
-    <section className={`flex flex-col gap-3 rounded-[28px] p-5 ${className}`}>
+    <section
+      className={`flex flex-col gap-3 rounded-[28px] p-5 short:gap-2 short:py-3.5 ${className}`}
+    >
       <h2 className="text-20 font-bold">{title}</h2>
       {children}
     </section>
@@ -60,7 +62,7 @@ export default function HelpPage() {
           </HeaderLink>
         }
       />
-      <main className="flex flex-1 flex-col gap-4 p-5">
+      <main className="flex min-h-0 overflow-y-auto *:shrink-0 flex-1 flex-col gap-4 p-5 short:gap-3 short:py-4">
         <h1 className="text-30 leading-[1.3] font-bold">도움말</h1>
         <HelpSection title="서비스 이용 방법" className="bg-gray-1">
           <StepList steps={SERVICE_STEPS} numberClass="bg-primary text-white-pure" />
@@ -70,7 +72,7 @@ export default function HelpPage() {
             실전모드의 주문·결제 화면에서 모르는 게 있으면 하단의 주황색 &apos;음성 도우미&apos;
             버튼을 누르세요
           </p>
-          <div className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-orange text-18 font-bold">
+          <div className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-orange text-18 font-bold short:h-12">
             <span className="flex size-[34px] items-center justify-center rounded-full bg-white-pure">
               <MicIcon size={20} />
             </span>

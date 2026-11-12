@@ -22,7 +22,7 @@ export function MissionSelect({ serviceName, missions }: MissionSelectProps) {
   return (
     <>
       <Header right={<HeaderChip compact>연습 · {serviceName}</HeaderChip>} />
-      <main className="flex flex-1 flex-col gap-3.5 px-5 pt-6 pb-5">
+      <main className="flex min-h-0 overflow-y-auto *:shrink-0 flex-1 flex-col gap-3.5 px-5 pt-6 pb-5 short:pt-4">
         <div>
           <h1 className="text-28 leading-[1.3] font-bold">어떤 연습을 해볼까요?</h1>
           <p className="mt-1 text-17 text-text-sub">{serviceName} 키오스크 연습 미션이에요</p>

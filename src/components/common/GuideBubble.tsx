@@ -15,7 +15,7 @@ export function GuideBubble({ variant = "guide", detail, children }: GuideBubble
   return (
     <div
       role={isError ? "alert" : undefined}
-      className={`flex flex-none items-center gap-3 rounded-[20px] px-3.5 py-3 ${
+      className={`flex flex-none items-center gap-3 rounded-[20px] px-3.5 py-3 short:py-2 ${
         isError ? "border-2 border-error bg-error-bg" : "bg-mint-light"
       }`}
     >

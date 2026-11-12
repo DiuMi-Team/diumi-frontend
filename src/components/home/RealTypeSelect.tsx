@@ -17,7 +17,7 @@ export function RealTypeSelect({ chip, compactChip, backHref }: RealTypeSelectPr
     <>
       <Header right={<HeaderChip compact={compactChip}>{chip}</HeaderChip>} />
       <NavBar back={backHref} size="lg" />
-      <main className="flex flex-1 flex-col justify-center gap-[18px] p-5">
+      <main className="flex min-h-0 overflow-y-auto *:shrink-0 flex-1 flex-col justify-center-safe gap-[18px] p-5 short:gap-3 short:py-4">
         <h1 className="mb-1.5 text-center text-32 leading-[1.3] font-bold">
           어떤 방식으로
           <br />

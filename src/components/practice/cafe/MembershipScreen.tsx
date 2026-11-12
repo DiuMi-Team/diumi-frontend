@@ -7,7 +7,7 @@ import { groupDim, ScreenHeading } from "@/components/practice/cafe/parts";
 
 const BENEFIT_IDS = ["membership:stamp", "membership:coupon"];
 const TILE_CLASS =
-  "flex h-40 flex-col items-center justify-center gap-2.5 rounded-3xl bg-gray-1 text-19 font-bold";
+  "flex h-40 flex-col items-center justify-center gap-2.5 rounded-3xl bg-gray-1 text-19 font-bold short:h-[120px] short:gap-1.5 short:[&>svg]:size-12";
 
 export function MembershipScreen() {
   const { step } = usePractice();
@@ -36,7 +36,7 @@ export function MembershipScreen() {
       </div>
       <KioskButton
         id="membership:skip"
-        className="flex h-[72px] items-center justify-between rounded-3xl bg-gray-1 px-5 text-19 font-bold"
+        className="flex h-[72px] items-center justify-between rounded-3xl bg-gray-1 px-5 text-19 font-bold short:h-14"
       >
         적립·쿠폰 없이 진행
         <span className="flex size-9 items-center justify-center rounded-full bg-white">

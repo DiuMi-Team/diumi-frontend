@@ -7,7 +7,7 @@ import {
   KIOSK_PRIMARY_CLASS,
   PaymentAmount,
   ScreenHeading,
-} from "@/components/practice/cafe/parts";
+} from "@/components/practice/kiosk/parts";
 import { payableTotal } from "@/features/order/order";
 
 export function CardInsertScreen() {

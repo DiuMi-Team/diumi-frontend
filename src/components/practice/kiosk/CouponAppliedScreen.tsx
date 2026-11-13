@@ -3,7 +3,7 @@
 import { CouponIcon } from "@/components/icons/kiosk-icons";
 import { CheckIcon } from "@/components/icons/ui-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
-import { KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/cafe/parts";
+import { KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/kiosk/parts";
 import {
   appliedCoupon,
   cartTotal,

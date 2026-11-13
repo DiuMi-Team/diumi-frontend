@@ -9,7 +9,8 @@ import { Header, HeaderChip } from "@/components/common/Header";
 import { NavBar } from "@/components/common/NavBar";
 import { PracticeProgress } from "@/components/common/Progress";
 import { HomeFilledIcon } from "@/components/icons/ui-icons";
-import { CAFE_SCREENS, SCREEN_GAP } from "@/components/practice/cafe/screens";
+import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
+import { KIOSK_SCREENS, SCREEN_GAP } from "@/components/practice/kiosk/screens";
 import { MissionComplete } from "@/components/practice/MissionComplete";
 import { MissionIntro } from "@/components/practice/MissionIntro";
 import { PracticeProvider } from "@/components/practice/PracticeContext";
@@ -24,8 +25,6 @@ import {
   type PracticePosition,
 } from "@/features/practice/engine";
 import type { PracticeMission } from "@/features/practice/types";
-
-const SERVICE_LABEL = { cafe: "카페" } as const;
 
 /** 미션 데이터 하나로 오늘의 미션 → 단계별 화면 → 연습 완료를 그린다 */
 export function PracticeRunner({ mission }: { mission: PracticeMission }) {
@@ -67,7 +66,9 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
   };
 
   const header = (
-    <Header right={<HeaderChip compact>연습 · {SERVICE_LABEL[mission.service]}</HeaderChip>} />
+    <Header
+      right={<HeaderChip compact>연습 · {KIOSK_COPY[mission.service].serviceName}</HeaderChip>}
+    />
   );
 
   if (position.kind === "intro") {
@@ -92,7 +93,7 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
   }
 
   const step = activeStep(mission, position)!;
-  const Screen = CAFE_SCREENS[step.screen];
+  const Screen = KIOSK_SCREENS[step.screen];
 
   return (
     <>

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { HotIcon, IceIcon } from "@/components/icons/kiosk-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
-import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/cafe/parts";
+import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/kiosk/parts";
 import {
   getCafeMenu,
   LARGE_EXTRA_PRICE,
@@ -21,7 +21,9 @@ const UNSELECTED_CLASS = "bg-gray-1";
 export function OptionsScreen() {
   const { step, order } = usePractice();
   const draft = order.draft;
-  if (!draft) throw new Error(`${step.id}: 옵션을 고를 메뉴가 없어요. 미션 데이터를 확인해 주세요`);
+  if (draft?.type !== "drink") {
+    throw new Error(`${step.id}: 옵션을 고를 음료가 없어요. 미션 데이터를 확인해 주세요`);
+  }
 
   const quantity = groupDim(step.target.id, QUANTITY_IDS);
   /* 수량을 이미 바꿨으면 고른 항목처럼 덜 흐리게 보인다 */

@@ -4,6 +4,8 @@ import type { OrderAction, OrderState } from "@/features/order/order";
 export type PracticeScreen =
   | "dineOption"
   | "menu"
+  | "setChoice"
+  | "burgerConfirm"
   | "options"
   | "paidOptions"
   | "orderReview"
@@ -13,6 +15,8 @@ export type PracticeScreen =
   | "paymentMethod"
   | "cardInsert"
   | "paymentDone";
+
+export type PracticeService = "cafe" | "fastfood";
 
 export type PracticeStep = {
   /** 디자인 화면 ID. 예: "PC02" */
@@ -62,7 +66,7 @@ export type PracticeDetour = {
 
 export type PracticeMission = {
   id: string;
-  service: "cafe";
+  service: PracticeService;
   title: string;
   /** 진행바 칸 수 */
   totalStages: number;
@@ -77,7 +81,8 @@ export type PracticeMission = {
   /** 쿠폰 미션처럼 장바구니가 차 있는 상태에서 시작할 때 쓴다 */
   initialOrder?: Partial<OrderState>;
   steps: PracticeStep[];
-  waitingNumber: number;
+  /** 결제 완료 화면의 번호. 카페는 대기번호(예: "134"), 패스트푸드는 주문번호(예: "A-128") */
+  orderNumber: string;
   /** 완료 화면에 체크 표시와 함께 보여 줄 내용 */
   summary: string[];
 };

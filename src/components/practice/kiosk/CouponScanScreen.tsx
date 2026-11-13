@@ -4,7 +4,7 @@ import {
   KIOSK_OUTLINE_CLASS,
   KIOSK_PRIMARY_CLASS,
   ScreenHeading,
-} from "@/components/practice/cafe/parts";
+} from "@/components/practice/kiosk/parts";
 
 /** 쿠폰 바코드 찍기 (PD04) */
 export function CouponScanScreen() {

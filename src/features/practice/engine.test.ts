@@ -39,7 +39,7 @@ const mission: PracticeMission = {
       action: { type: "selectMenu", menuId: "americano" },
     },
   ],
-  waitingNumber: 1,
+  orderNumber: "1",
   summary: [],
 };
 
@@ -104,7 +104,14 @@ describe("단계별 주문 상태", () => {
       ...mission,
       initialOrder: {
         cart: [
-          { menuId: "latte", temperature: "hot", size: "regular", quantity: 1, paidOptions: {} },
+          {
+            type: "drink",
+            menuId: "latte",
+            temperature: "hot",
+            size: "regular",
+            quantity: 1,
+            paidOptions: {},
+          },
         ],
       },
     };

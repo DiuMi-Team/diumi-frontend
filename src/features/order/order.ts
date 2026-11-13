@@ -13,6 +13,12 @@ import {
   type PaidOptionId,
   type Temperature,
 } from "@/features/cafe/catalog";
+import {
+  getBurger,
+  SET_CONTENTS,
+  SINGLE_CONTENTS,
+  type BurgerId,
+} from "@/features/fastfood/catalog";
 
 /** 키오스크 주문 상태. 연습 엔진은 단계마다 이 상태에 동작을 하나씩 적용한다. */
 
@@ -22,7 +28,9 @@ export type PaymentMethod = "mobilePay" | "card" | "giftCard";
 /** 유료 옵션별 개수. 고른 옵션만 들어 있다 */
 export type PaidOptionCounts = Partial<Record<PaidOptionId, number>>;
 
-export type CartItem = {
+/** 카페 음료 */
+export type DrinkItem = {
+  type: "drink";
   menuId: CafeMenuId;
   temperature: Temperature;
   size: CupSize;
@@ -30,8 +38,22 @@ export type CartItem = {
   paidOptions: PaidOptionCounts;
 };
 
-/** 옵션 화면에서 고르는 중인 메뉴. 온도는 손님이 직접 골라야 해서 처음에는 비어 있다 */
-export type DraftItem = Omit<CartItem, "temperature"> & { temperature: Temperature | null };
+/** 패스트푸드 버거. 세트면 감자튀김과 콜라가 함께 나온다 */
+export type BurgerItem = {
+  type: "burger";
+  menuId: BurgerId;
+  set: boolean;
+  quantity: number;
+};
+
+export type CartItem = DrinkItem | BurgerItem;
+
+/** 고르는 중인 음료. 온도는 손님이 직접 골라야 해서 처음에는 비어 있다 */
+export type DrinkDraft = Omit<DrinkItem, "temperature"> & { temperature: Temperature | null };
+/** 고르는 중인 버거. 세트/단품은 손님이 직접 골라야 해서 처음에는 비어 있다 */
+export type BurgerDraft = Omit<BurgerItem, "set"> & { set: boolean | null };
+
+export type DraftItem = DrinkDraft | BurgerDraft;
 
 export type OrderState = {
   dineOption: DineOption | null;
@@ -47,6 +69,8 @@ export type OrderState = {
 export type OrderAction =
   | { type: "setDineOption"; value: DineOption }
   | { type: "selectMenu"; menuId: CafeMenuId }
+  | { type: "selectBurger"; menuId: BurgerId }
+  | { type: "chooseSet"; set: boolean }
   | { type: "setTemperature"; value: Temperature }
   | { type: "setSize"; value: CupSize }
   | { type: "setQuantity"; value: number }
@@ -73,6 +97,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return {
         ...state,
         draft: {
+          type: "drink",
           menuId: action.menuId,
           temperature: null,
           size: "regular",
@@ -80,28 +105,29 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           paidOptions: {},
         },
       };
-    case "setTemperature":
-      return { ...state, draft: updateDraft(state, { temperature: action.value }) };
-    case "setSize":
-      return { ...state, draft: updateDraft(state, { size: action.value }) };
-    case "setQuantity":
-      assertCount(action.value, 1, "수량");
-      return { ...state, draft: updateDraft(state, { quantity: action.value }) };
-    case "setPaidOption": {
-      assertCount(action.count, 0, "유료 옵션 개수");
-      const paidOptions = { ...requireDraft(state).paidOptions, [action.option]: action.count };
-      if (action.count === 0) delete paidOptions[action.option];
-      return { ...state, draft: updateDraft(state, { paidOptions }) };
-    }
-    case "addDraftToCart": {
-      const draft = requireDraft(state);
-      if (!draft.temperature) throw new Error("온도를 먼저 골라야 해요");
+    case "selectBurger":
       return {
         ...state,
-        cart: [...state.cart, { ...draft, temperature: draft.temperature }],
-        draft: null,
+        draft: { type: "burger", menuId: action.menuId, set: null, quantity: 1 },
       };
+    case "chooseSet":
+      return { ...state, draft: { ...requireBurgerDraft(state), set: action.set } };
+    case "setTemperature":
+      return { ...state, draft: { ...requireDrinkDraft(state), temperature: action.value } };
+    case "setSize":
+      return { ...state, draft: { ...requireDrinkDraft(state), size: action.value } };
+    case "setQuantity":
+      assertCount(action.value, 1, "수량");
+      return { ...state, draft: { ...requireDraft(state), quantity: action.value } };
+    case "setPaidOption": {
+      assertCount(action.count, 0, "유료 옵션 개수");
+      const draft = requireDrinkDraft(state);
+      const paidOptions = { ...draft.paidOptions, [action.option]: action.count };
+      if (action.count === 0) delete paidOptions[action.option];
+      return { ...state, draft: { ...draft, paidOptions } };
     }
+    case "addDraftToCart":
+      return { ...state, cart: [...state.cart, completeDraft(requireDraft(state))], draft: null };
     case "applyCoupon":
       if (state.cart.length === 0) throw new Error("쿠폰은 메뉴를 담은 뒤에 쓸 수 있어요");
       getCoupon(action.couponId);
@@ -125,12 +151,27 @@ function requireDraft(state: OrderState): DraftItem {
   return state.draft;
 }
 
-function updateDraft(state: OrderState, patch: Partial<DraftItem>): DraftItem {
-  return { ...requireDraft(state), ...patch };
+function requireDrinkDraft(state: OrderState): DrinkDraft {
+  const draft = requireDraft(state);
+  if (draft.type !== "drink") throw new Error("음료 옵션은 음료를 고른 뒤에 바꿀 수 있어요");
+  return draft;
 }
 
-/** 가격에는 온도가 상관없어서 고르는 중인 메뉴에도 쓸 수 있다 */
-type PricedItem = Pick<CartItem, "menuId" | "size" | "quantity" | "paidOptions">;
+function requireBurgerDraft(state: OrderState): BurgerDraft {
+  const draft = requireDraft(state);
+  if (draft.type !== "burger") throw new Error("세트/단품은 버거를 고른 뒤에 고를 수 있어요");
+  return draft;
+}
+
+/** 장바구니에 담을 수 있게 다 골랐는지 확인한다 */
+function completeDraft(draft: DraftItem): CartItem {
+  if (draft.type === "drink") {
+    if (!draft.temperature) throw new Error("온도를 먼저 골라야 해요");
+    return { ...draft, temperature: draft.temperature };
+  }
+  if (draft.set === null) throw new Error("세트/단품을 먼저 골라야 해요");
+  return { ...draft, set: draft.set };
+}
 
 /** 고른 유료 옵션을 메뉴판 순서대로 [옵션, 개수]로 돌려준다 */
 export function selectedPaidOptions(counts: PaidOptionCounts) {
@@ -147,7 +188,12 @@ export function paidOptionsPrice(counts: PaidOptionCounts): number {
   );
 }
 
-export function itemUnitPrice(item: PricedItem): number {
+/** 한 개(한 잔) 가격. 고르는 중인 메뉴에도 쓸 수 있다 */
+export function itemUnitPrice(item: CartItem | DraftItem): number {
+  if (item.type === "burger") {
+    const burger = getBurger(item.menuId);
+    return item.set ? burger.setPrice : burger.price;
+  }
   return (
     getCafeMenu(item.menuId).price +
     (item.size === "large" ? LARGE_EXTRA_PRICE : 0) +
@@ -155,7 +201,7 @@ export function itemUnitPrice(item: PricedItem): number {
   );
 }
 
-export function itemPrice(item: PricedItem): number {
+export function itemPrice(item: CartItem | DraftItem): number {
   return itemUnitPrice(item) * item.quantity;
 }
 
@@ -182,11 +228,24 @@ export function cartCount(cart: readonly CartItem[]): number {
   return cart.reduce((sum, item) => sum + item.quantity, 0);
 }
 
+/** "아메리카노", "불고기버거 단품" */
+export function itemName(item: CartItem | DraftItem): string {
+  if (item.type === "drink") return getCafeMenu(item.menuId).name;
+  const name = getBurger(item.menuId).name;
+  return item.set === null ? name : `${name} ${item.set ? "세트" : "단품"}`;
+}
+
+/** 수량 단위. 음료는 잔, 버거는 개 */
+export function itemUnit(item: CartItem | DraftItem): string {
+  return item.type === "drink" ? "잔" : "개";
+}
+
 /**
- * "HOT · Regular · 휘핑크림". 장바구니 요약처럼 좁은 곳은 short로 "휘핑".
- * 옵션을 2개 이상 고르면 "휘핑크림 2"처럼 개수를 붙인다.
+ * 음료는 "HOT · Regular · 휘핑크림", 버거는 "버거만" 또는 "버거 + 감자튀김 + 콜라".
+ * 장바구니 요약처럼 좁은 곳은 short로 "휘핑". 옵션을 2개 이상 고르면 "휘핑크림 2"처럼 개수를 붙인다.
  */
-export function itemOptionLabel(item: CartItem, { short = false } = {}): string {
+export function itemDetail(item: CartItem, { short = false } = {}): string {
+  if (item.type === "burger") return item.set ? SET_CONTENTS : SINGLE_CONTENTS;
   const extras = selectedPaidOptions(item.paidOptions).map(([option, count]) => {
     const name = short ? option.shortName : option.name;
     return count > 1 ? `${name} ${count}` : name;

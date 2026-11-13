@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { formatWon } from "@/features/order/order";
+import { BurgerIcon, MenuIcon } from "@/components/icons/kiosk-icons";
+import { formatWon, type CartItem, type DraftItem } from "@/features/order/order";
 
 /* 카페 키오스크 화면들이 함께 쓰는 모양 */
 
@@ -49,4 +50,21 @@ export function PaymentAmount({ amount, discount = 0 }: { amount: number; discou
 
 export function Spacer() {
   return <div className="flex-1" />;
+}
+
+/** 장바구니 항목 그림. 음료는 컵, 버거는 버거 */
+export function ItemIcon({
+  item,
+  size,
+  shadow = true,
+}: {
+  item: CartItem | DraftItem;
+  size: number;
+  shadow?: boolean;
+}) {
+  return item.type === "drink" ? (
+    <MenuIcon menuId={item.menuId} size={size} shadow={shadow} />
+  ) : (
+    <BurgerIcon burgerId={item.menuId} size={size} shadow={shadow} />
+  );
 }

@@ -1,4 +1,5 @@
 import type { CafeMenuId, PaidOptionId } from "@/features/cafe/catalog";
+import type { BurgerId } from "@/features/fastfood/catalog";
 
 /* 키오스크 화면 그림. design/screens의 SVG를 그대로 옮겼다. */
 
@@ -323,6 +324,121 @@ export function BarcodeScanIcon({ size }: IconProps) {
         strokeLinecap="round"
         strokeDasharray="4 4"
       />
+    </svg>
+  );
+}
+
+/** 버거 그림. 위 빵·채소·패티·아래 빵 색이 버거마다 조금씩 다르다 */
+export function BurgerIcon({
+  burgerId,
+  size,
+  shadow = true,
+}: IconProps & { burgerId: BurgerId; shadow?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      {shadow && <ellipse cx="32" cy="59" rx="20" ry="3" {...SHADOW} />}
+      <BurgerLayers burgerId={burgerId} />
+    </svg>
+  );
+}
+
+function BurgerLayers({ burgerId }: { burgerId: BurgerId }) {
+  return (
+    <>
+      <path d="M10 30a22 18 0 0 1 44 0z" fill="#F5A65B" />
+      {burgerId !== "spicy" && (
+        <>
+          <circle cx="30" cy="21" r="1.7" fill="#FDFDFD" />
+          <circle cx="38" cy="18" r="1.7" fill="#FDFDFD" />
+        </>
+      )}
+      {burgerId === "bulgogi" && <circle cx="43" cy="24" r="1.7" fill="#FDFDFD" />}
+      <rect
+        x="8"
+        y="30"
+        width="48"
+        height="7"
+        rx="3.5"
+        fill={burgerId === "chicken" ? "#B9E6E8" : "#5AC7C3"}
+      />
+      {burgerId === "chicken" ? (
+        <rect
+          x="11"
+          y="37"
+          width="42"
+          height="8"
+          rx="4"
+          fill="#F5A65B"
+          stroke="#3D3531"
+          strokeWidth="2"
+        />
+      ) : (
+        <rect x="11" y="37" width="42" height="8" rx="4" fill="#3D3531" />
+      )}
+      {burgerId === "cheese" && (
+        <path
+          d="M10 36h44l-7 8-8-5-7 6-7-6-8 5z"
+          fill="#F5A65B"
+          stroke="#FDFDFD"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      )}
+      <rect x="10" y="45" width="44" height="11" rx="5.5" fill="#F5A65B" />
+      {burgerId === "spicy" && (
+        <>
+          <circle cx="52" cy="14" r="10" fill="#FDFDFD" />
+          <path d="M52 6c2 4 6 6 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z" fill="#F5A65B" />
+        </>
+      )}
+    </>
+  );
+}
+
+export function FriesIcon({ size }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      <FriesLayers />
+    </svg>
+  );
+}
+
+function FriesLayers() {
+  return (
+    <>
+      <rect x="20" y="8" width="5" height="26" rx="2" fill="#F5A65B" />
+      <rect x="27" y="5" width="5" height="28" rx="2" fill="#F5A65B" />
+      <rect x="34" y="7" width="5" height="26" rx="2" fill="#F5A65B" />
+      <rect x="41" y="10" width="5" height="24" rx="2" fill="#F5A65B" />
+      <path d="M16 24h32l-4 30a3 3 0 0 1-3 3H23a3 3 0 0 1-3-3z" fill="#55A4E3" />
+      <circle cx="32" cy="38" r="6" fill="#FDFDFD" />
+    </>
+  );
+}
+
+/** 세트 그림 (버거 + 감자튀김 + 콜라). 가로로 긴 그림이라 width만 받는다 */
+export function SetMealIcon({ burgerId, width }: { burgerId: BurgerId; width: number }) {
+  return (
+    <svg
+      width={width}
+      height={(width * 64) / 120}
+      viewBox="0 0 120 64"
+      aria-hidden="true"
+      className="flex-none"
+    >
+      <ellipse cx="60" cy="60" rx="52" ry="3" {...SHADOW} />
+      <g transform="translate(70 2) scale(.9)">
+        <path d="M38 2l-4 14" stroke="#3D3531" strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M17 21h30l-3 32a4 4 0 0 1-4 3H24a4 4 0 0 1-4-3z" fill="#3D3531" />
+        <rect x="14" y="14" width="36" height="8" rx="4" fill="#DFEBEC" />
+        <circle cx="32" cy="37" r="7" fill="#FDFDFD" />
+      </g>
+      <g transform="translate(38 6) scale(.85)">
+        <FriesLayers />
+      </g>
+      <g transform="translate(0 8) scale(.85)">
+        <BurgerLayers burgerId={burgerId} />
+      </g>
     </svg>
   );
 }

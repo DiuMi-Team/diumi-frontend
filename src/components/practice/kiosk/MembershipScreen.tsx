@@ -3,7 +3,7 @@
 import { CouponIcon, MembershipStarIcon } from "@/components/icons/kiosk-icons";
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
-import { groupDim, ScreenHeading } from "@/components/practice/cafe/parts";
+import { groupDim, ScreenHeading } from "@/components/practice/kiosk/parts";
 
 const BENEFIT_IDS = ["membership:stamp", "membership:coupon"];
 const TILE_CLASS =

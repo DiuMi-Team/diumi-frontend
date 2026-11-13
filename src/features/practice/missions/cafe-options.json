@@ -190,7 +190,7 @@
       "target": { "id": "done:confirm", "label": "확인을" }
     }
   ],
-  "waitingNumber": 133,
+  "orderNumber": "133",
   "summary": [
     "포장 선택",
     "아메리카노 ICE · Large 2잔",

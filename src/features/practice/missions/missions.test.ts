@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cartTotal,
   formatWon,
-  itemOptionLabel,
+  itemDetail,
   orderReducer,
   payableTotal,
 } from "@/features/order/order";
@@ -11,6 +11,7 @@ import {
   cafeBasic,
   cafeCoupon,
   cafeOptions,
+  fastfoodBasic,
   PRACTICE_MISSIONS,
 } from "@/features/practice/missions";
 
@@ -69,7 +70,14 @@ describe("카페 기본 미션", () => {
     expect(final.dineOption).toBe("takeout");
     expect(final.paymentMethod).toBe("card");
     expect(final.cart).toEqual([
-      { menuId: "americano", temperature: "hot", size: "regular", quantity: 1, paidOptions: {} },
+      {
+        type: "drink",
+        menuId: "americano",
+        temperature: "hot",
+        size: "regular",
+        quantity: 1,
+        paidOptions: {},
+      },
     ]);
     expect(cartTotal(final.cart)).toBe(3200);
   });
@@ -84,7 +92,7 @@ describe("카페 기본 미션", () => {
 describe("카페 옵션 포함 미션", () => {
   it("아메리카노 ICE · Large 2잔과 카페모카 HOT · Regular · 휘핑크림 1잔, 12,700원이다", () => {
     const final = orderAt(cafeOptions, { kind: "complete" });
-    expect(final.cart.map((item) => [item.menuId, itemOptionLabel(item), item.quantity])).toEqual([
+    expect(final.cart.map((item) => [item.menuId, itemDetail(item), item.quantity])).toEqual([
       ["americano", "ICE · Large", 2],
       ["mocha", "HOT · Regular · 휘핑크림", 1],
     ]);
@@ -102,7 +110,7 @@ describe("카페 쿠폰 미션", () => {
   it("카페라떼 1잔이 담긴 상태에서 시작한다", () => {
     const start = orderAt(cafeCoupon, { kind: "intro" });
     expect(start.dineOption).toBe("takeout");
-    expect(start.cart.map((item) => [item.menuId, itemOptionLabel(item), item.quantity])).toEqual([
+    expect(start.cart.map((item) => [item.menuId, itemDetail(item), item.quantity])).toEqual([
       ["latte", "HOT · Regular", 1],
     ]);
     expect(start.couponId).toBeNull();
@@ -119,6 +127,22 @@ describe("카페 쿠폰 미션", () => {
   it("디자인의 PD02~PD08 화면을 순서대로 거친다", () => {
     expect(cafeCoupon.steps.map((step) => step.id)).toEqual(
       Array.from({ length: 7 }, (_, i) => `PD${String(i + 2).padStart(2, "0")}`),
+    );
+  });
+});
+
+describe("패스트푸드 단품 기본 미션", () => {
+  it("불고기버거 단품 1개를 매장에서 먹기로 카드 결제해 4,800원이다", () => {
+    const final = orderAt(fastfoodBasic, { kind: "complete" });
+    expect(final.dineOption).toBe("dineIn");
+    expect(final.paymentMethod).toBe("card");
+    expect(final.cart).toEqual([{ type: "burger", menuId: "bulgogi", set: false, quantity: 1 }]);
+    expect(payableTotal(final)).toBe(4800);
+  });
+
+  it("디자인의 PE02~PE10 화면을 순서대로 거친다", () => {
+    expect(fastfoodBasic.steps.map((step) => step.id)).toEqual(
+      Array.from({ length: 9 }, (_, i) => `PE${String(i + 2).padStart(2, "0")}`),
     );
   });
 });

@@ -13,17 +13,19 @@ const SMALL_PHONE = { width: 375, height: 553 };
 
 /**
  * 아이폰 15에서도 조금 넘쳐도 되는 연습 화면 (단계 번호는 0부터). 눌러야 할 곳은 자동 스크롤로 보여 준다.
- * - basic:2, options:7, options:11 = 안내가 두 줄인 옵션 화면 (PC04, PA09, PA13)
- * - options:9, options:10 = 유료 옵션 화면 (PA11, PA12)
- * - options:12 = 두 메뉴가 담긴 결제하기 화면 (PA14)
+ * - basic:2, options:7, options:11 = 안내가 두 줄인 카페 옵션 화면 (PC04, PA09, PA13)
+ * - options:9, options:10 = 카페 유료 옵션 화면 (PA11, PA12)
+ * - options:12 = 두 메뉴가 담긴 카페 결제하기 화면 (PA14)
+ * - fastfood basic:4 = 안내가 세 줄인 패스트푸드 결제하기 화면 (PE06)
  */
 const ALLOWED_TO_SCROLL = new Set([
-  "basic:2",
-  "options:7",
-  "options:9",
-  "options:10",
-  "options:11",
-  "options:12",
+  "cafe/practice/basic:2",
+  "cafe/practice/options:7",
+  "cafe/practice/options:9",
+  "cafe/practice/options:10",
+  "cafe/practice/options:11",
+  "cafe/practice/options:12",
+  "fastfood/practice/basic:4",
 ]);
 
 test.use({ viewport: PHONE });
@@ -46,17 +48,29 @@ async function expectTargetInView(page: Page) {
   expect(box.y + box.height).toBeLessThanOrEqual(height);
 }
 
-for (const route of ["/", "/cafe", "/cafe/real", "/cafe/practice", "/fastfood"]) {
+for (const route of [
+  "/",
+  "/cafe",
+  "/cafe/real",
+  "/cafe/practice",
+  "/fastfood",
+  "/fastfood/practice",
+]) {
   test(`${route}은 휴대폰에서 스크롤 없이 한 화면에 보인다`, async ({ page }) => {
     await page.goto(route);
     await expect.poll(() => overflow(page)).toBe(0);
   });
 }
 
-for (const mission of ["basic", "options", "coupon"]) {
+for (const mission of [
+  "cafe/practice/basic",
+  "cafe/practice/options",
+  "cafe/practice/coupon",
+  "fastfood/practice/basic",
+]) {
   test(`${mission} 미션은 휴대폰에서 눌러야 할 곳이 항상 화면 안에 보인다`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await startMission(page, `/cafe/practice/${mission}`);
+    await startMission(page, `/${mission}`);
 
     for (let step = 0; (await target(page).count()) > 0; step++) {
       await expectTargetInView(page);
@@ -74,7 +88,7 @@ for (const mission of ["basic", "options", "coupon"]) {
   }) => {
     await page.setViewportSize(SMALL_PHONE);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await startMission(page, `/cafe/practice/${mission}`);
+    await startMission(page, `/${mission}`);
 
     while ((await target(page).count()) > 0) {
       await expectTargetInView(page);
@@ -87,7 +101,7 @@ for (const mission of ["basic", "options", "coupon"]) {
   }) => {
     await page.setViewportSize(SMALL_PHONE);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await startMission(page, `/cafe/practice/${mission}`);
+    await startMission(page, `/${mission}`);
 
     const dimmed = page.locator("main button[aria-disabled]").first();
     await dimmed.click({ force: true });

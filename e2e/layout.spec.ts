@@ -11,6 +11,8 @@ const ROUTES = [
   "/cafe/practice/basic",
   "/cafe/practice/options",
   "/cafe/practice/coupon",
+  "/fastfood/practice",
+  "/fastfood/practice/basic",
 ];
 
 for (const route of ROUTES) {

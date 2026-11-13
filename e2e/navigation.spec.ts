@@ -48,7 +48,6 @@ test("도움말은 헤더와 배너에서 열고 닫기로 홈에 돌아온다",
 const COMING_SOON = [
   { route: "/", name: "열차" },
   { route: "/", name: "길찾기" },
-  { route: "/fastfood", name: "연습모드 시작하기" },
   { route: "/cafe/real", name: "미션 수행하기 선택하기" },
   { route: "/fastfood/real", name: "자유롭게 체험하기 선택하기" },
 ];

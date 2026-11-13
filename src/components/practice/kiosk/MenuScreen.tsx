@@ -1,35 +1,32 @@
 "use client";
 
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
-import { MenuIcon } from "@/components/icons/kiosk-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
-import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/cafe/parts";
-import {
-  CAFE_CATEGORIES,
-  CAFE_MENUS,
-  DEFAULT_CATEGORY,
-  getCafeMenu,
-} from "@/features/cafe/catalog";
+import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
+import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/kiosk/parts";
 import {
   cartCount,
   cartTotal,
   formatWon,
-  itemOptionLabel,
+  itemDetail,
+  itemName,
   type CartItem,
 } from "@/features/order/order";
 
-const MENU_IDS = CAFE_MENUS.map((menu) => `menu:${menu.id}`);
-const CATEGORY_IDS = CAFE_CATEGORIES.map((category) => `category:${category}`);
-
+/** 메뉴판 (카페 PC03·PC06, 패스트푸드 PE03·PE06 등) */
 export function MenuScreen() {
-  const { step, order } = usePractice();
+  const { mission, step, order } = usePractice();
+  const copy = KIOSK_COPY[mission.service];
+  const menuIds = copy.board.items.map((item) => item.id);
+  const categoryIds = copy.board.categories.map((category) => `category:${category}`);
+
   const targetId = step.target.id;
-  const board = groupDim(targetId, [...CATEGORY_IDS, ...MENU_IDS]);
-  const tabs = groupDim(targetId, CATEGORY_IDS);
-  const cards = groupDim(targetId, MENU_IDS);
+  const board = groupDim(targetId, [...categoryIds, ...menuIds]);
+  const tabs = groupDim(targetId, categoryIds);
+  const cards = groupDim(targetId, menuIds);
   const isEmpty = order.cart.length === 0;
-  /* 메뉴를 고를 차례면 제목을 보이고, 담기를 마치고 결제로 넘어갈 차례면 결제하기 버튼을 보인다 */
-  const choosingMenu = MENU_IDS.includes(targetId);
+  /* 메뉴를 고를 차례면 제목을 보이고, 담기를 마치고 결제로 넘어갈 차례면 결제 버튼을 보인다 */
+  const choosingMenu = menuIds.includes(targetId);
 
   return (
     <>
@@ -43,15 +40,15 @@ export function MenuScreen() {
         className={`flex flex-col gap-2.5 rounded-3xl bg-gray-1 p-3 short:gap-1.5 short:p-2 ${board.groupClass}`}
       >
         <div className={`flex gap-1.5 ${board.groupClass ? "" : tabs.groupClass}`}>
-          {CAFE_CATEGORIES.map((category) => {
-            const selected = category === DEFAULT_CATEGORY;
+          {copy.board.categories.map((category) => {
+            const selected = category === copy.board.defaultCategory;
             return (
               <KioskButton
                 key={category}
                 id={`category:${category}`}
                 pressed={selected}
                 inactiveClassName={board.groupClass ? "" : tabs.itemInactiveClass}
-                className={`relative flex h-10 flex-1 items-center justify-center rounded-full text-16 font-bold after:absolute after:inset-x-0 after:-inset-y-1 ${
+                className={`relative flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-16 font-bold whitespace-nowrap after:absolute after:inset-x-0 after:-inset-y-1 ${
                   selected ? "bg-primary text-white-pure" : "bg-white"
                 }`}
               >
@@ -61,18 +58,18 @@ export function MenuScreen() {
           })}
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          {CAFE_MENUS.map((menu) => (
+          {copy.board.items.map((item) => (
             <KioskButton
-              key={menu.id}
-              id={`menu:${menu.id}`}
+              key={item.id}
+              id={item.id}
               tight
               inactiveClassName={board.groupClass ? "" : cards.itemInactiveClass}
-              ariaLabel={`${menu.name} ${formatWon(menu.price)}`}
+              ariaLabel={`${item.name} ${formatWon(item.price)}`}
               className="flex h-[132px] flex-col items-center justify-center rounded-[20px] bg-white short:h-24 short:[&>svg]:size-9"
             >
-              <MenuIcon menuId={menu.id} size={56} />
-              <b className="text-17">{menu.name}</b>
-              <span className="text-16 text-text-sub">{formatWon(menu.price)}</span>
+              {item.icon(56)}
+              <b className="text-17">{item.name}</b>
+              <span className="text-16 text-text-sub">{formatWon(item.price)}</span>
             </KioskButton>
           ))}
         </div>
@@ -82,8 +79,8 @@ export function MenuScreen() {
         <>
           <Spacer />
           <KioskButton id="menu:checkout" className={KIOSK_PRIMARY_CLASS}>
-            결제하기
-            <ChevronRightIcon size={20} />
+            {copy.checkout.label}
+            {copy.checkout.chevron && <ChevronRightIcon size={20} />}
           </KioskButton>
         </>
       )}
@@ -112,8 +109,9 @@ function CartSummary({ cart }: { cart: CartItem[] }) {
         <span className="font-bold text-text-sub">담은 메뉴</span>
         {cart.map((item, index) => (
           <span key={index}>
-            {getCafeMenu(item.menuId).name} {itemOptionLabel(item, { short: true })} ×{" "}
-            {item.quantity}
+            {/* 버거는 "불고기버거 단품"처럼 이름에 구성이 들어 있어 설명을 붙이지 않는다 */}
+            {itemName(item)}
+            {item.type === "drink" && ` ${itemDetail(item, { short: true })}`} × {item.quantity}
           </span>
         ))}
       </span>

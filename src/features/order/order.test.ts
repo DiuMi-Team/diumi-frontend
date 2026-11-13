@@ -4,11 +4,15 @@ import {
   cartTotal,
   EMPTY_ORDER,
   formatWon,
-  itemOptionLabel,
+  itemDetail,
+  itemName,
+  itemUnit,
   orderReducer,
   paidOptionsSummary,
   payableTotal,
   couponDiscount,
+  type CartItem,
+  type DraftItem,
   type OrderAction,
 } from "@/features/order/order";
 
@@ -16,10 +20,17 @@ function run(actions: OrderAction[]) {
   return actions.reduce(orderReducer, EMPTY_ORDER);
 }
 
+/** 음료 유료 옵션을 확인하는 테스트에서 쓴다 */
+function paidOptionsOf(item: CartItem | DraftItem | null | undefined) {
+  if (item?.type !== "drink") throw new Error("음료가 아니에요");
+  return item.paidOptions;
+}
+
 describe("주문 상태", () => {
   it("메뉴를 고르면 온도는 비어 있고 Regular · 1잔으로 시작한다", () => {
     const state = run([{ type: "selectMenu", menuId: "americano" }]);
     expect(state.draft).toEqual({
+      type: "drink",
       menuId: "americano",
       temperature: null,
       size: "regular",
@@ -37,7 +48,7 @@ describe("주문 상태", () => {
     ]);
     expect(state.draft).toBeNull();
     expect(state.cart).toHaveLength(1);
-    expect(itemOptionLabel(state.cart[0])).toBe("ICE · Regular");
+    expect(itemDetail(state.cart[0])).toBe("ICE · Regular");
   });
 
   it("Large는 500원, 수량은 곱해서 계산한다", () => {
@@ -91,13 +102,13 @@ describe("주문 상태", () => {
       { type: "setTemperature", value: "hot" },
       { type: "setPaidOption", option: "whip", count: 1 },
     ];
-    expect(run(start).draft?.paidOptions).toEqual({ whip: 1 });
+    expect(paidOptionsOf(run(start).draft)).toEqual({ whip: 1 });
 
     const two = run([...start, { type: "setQuantity", value: 2 }, { type: "addDraftToCart" }]);
     expect(cartTotal(two.cart)).toBe((4800 + 500) * 2);
 
     const removed = run([...start, { type: "setPaidOption", option: "whip", count: 0 }]);
-    expect(removed.draft?.paidOptions).toEqual({});
+    expect(paidOptionsOf(removed.draft)).toEqual({});
   });
 
   it("유료 옵션은 0 이상의 정수만 받는다", () => {
@@ -113,9 +124,9 @@ describe("주문 상태", () => {
       { type: "setPaidOption", option: "shot", count: 2 },
       { type: "addDraftToCart" },
     ]).cart;
-    expect(itemOptionLabel(item)).toBe("HOT · Regular · 샷 추가 2 · 휘핑크림");
-    expect(itemOptionLabel(item, { short: true })).toBe("HOT · Regular · 샷 2 · 휘핑");
-    expect(paidOptionsSummary(item.paidOptions)).toBe("샷 추가 2, 휘핑크림 1");
+    expect(itemDetail(item)).toBe("HOT · Regular · 샷 추가 2 · 휘핑크림");
+    expect(itemDetail(item, { short: true })).toBe("HOT · Regular · 샷 2 · 휘핑");
+    expect(paidOptionsSummary(paidOptionsOf(item))).toBe("샷 추가 2, 휘핑크림 1");
   });
 
   it("쿠폰을 쓰면 결제할 금액에서 할인된다", () => {
@@ -136,6 +147,7 @@ describe("주문 상태", () => {
       ...EMPTY_ORDER,
       cart: [
         {
+          type: "drink" as const,
           menuId: "americano" as const,
           temperature: "hot" as const,
           size: "regular" as const,
@@ -147,6 +159,43 @@ describe("주문 상태", () => {
     };
     expect(payableTotal({ ...cheap, cart: cheap.cart })).toBe(2200);
     expect(couponDiscount({ cart: [], couponId: "drink1000" })).toBe(0);
+  });
+
+  it("버거는 세트/단품을 골라야 담을 수 있고, 세트는 2,400원 비싸다", () => {
+    const start: OrderAction = { type: "selectBurger", menuId: "bulgogi" };
+    expect(run([start]).draft).toEqual({
+      type: "burger",
+      menuId: "bulgogi",
+      set: null,
+      quantity: 1,
+    });
+    expect(() => run([start, { type: "addDraftToCart" }])).toThrow("세트/단품");
+
+    const single = run([start, { type: "chooseSet", set: false }, { type: "addDraftToCart" }]);
+    expect(cartTotal(single.cart)).toBe(4800);
+    expect(itemName(single.cart[0])).toBe("불고기버거 단품");
+    expect(itemDetail(single.cart[0])).toBe("버거만");
+    expect(itemUnit(single.cart[0])).toBe("개");
+
+    const set = run([start, { type: "chooseSet", set: true }, { type: "addDraftToCart" }]);
+    expect(cartTotal(set.cart)).toBe(7200);
+    expect(itemName(set.cart[0])).toBe("불고기버거 세트");
+    expect(itemDetail(set.cart[0])).toBe("버거 + 감자튀김 + 콜라");
+  });
+
+  it("음료 옵션과 버거 옵션은 서로 섞어 쓸 수 없다", () => {
+    expect(() =>
+      run([
+        { type: "selectBurger", menuId: "cheese" },
+        { type: "setTemperature", value: "hot" },
+      ]),
+    ).toThrow();
+    expect(() =>
+      run([
+        { type: "selectMenu", menuId: "latte" },
+        { type: "chooseSet", set: true },
+      ]),
+    ).toThrow();
   });
 
   it("금액은 천 단위 쉼표와 원을 붙인다", () => {

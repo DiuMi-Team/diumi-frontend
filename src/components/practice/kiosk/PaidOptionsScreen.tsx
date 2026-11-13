@@ -8,7 +8,7 @@ import {
   KIOSK_PRIMARY_CLASS,
   ScreenHeading,
   Spacer,
-} from "@/components/practice/cafe/parts";
+} from "@/components/practice/kiosk/parts";
 import { PAID_OPTIONS, type PaidOption } from "@/features/cafe/catalog";
 import { formatWon, itemPrice, paidOptionsPrice } from "@/features/order/order";
 
@@ -16,7 +16,9 @@ import { formatWon, itemPrice, paidOptionsPrice } from "@/features/order/order";
 export function PaidOptionsScreen() {
   const { step, order } = usePractice();
   const draft = order.draft;
-  if (!draft) throw new Error(`${step.id}: 옵션을 고를 메뉴가 없어요. 미션 데이터를 확인해 주세요`);
+  if (draft?.type !== "drink") {
+    throw new Error(`${step.id}: 옵션을 고를 음료가 없어요. 미션 데이터를 확인해 주세요`);
+  }
 
   const extra = paidOptionsPrice(draft.paidOptions);
 

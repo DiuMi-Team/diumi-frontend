@@ -17,6 +17,7 @@
     "dineOption": "takeout",
     "cart": [
       {
+        "type": "drink",
         "menuId": "latte",
         "temperature": "hot",
         "size": "regular",
@@ -91,6 +92,6 @@
       "target": { "id": "done:confirm", "label": "확인을" }
     }
   ],
-  "waitingNumber": 135,
+  "orderNumber": "135",
   "summary": ["주문 내역 확인 · 카페라떼 1잔", "1,000원 할인 쿠폰 사용", "카드 결제 3,200원"]
 }

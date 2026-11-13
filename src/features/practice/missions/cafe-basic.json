@@ -103,6 +103,6 @@
       "target": { "id": "done:confirm", "label": "확인을" }
     }
   ],
-  "waitingNumber": 134,
+  "orderNumber": "134",
   "summary": ["포장 선택", "아메리카노 HOT · Regular 1잔", "카드 결제 3,200원"]
 }

@@ -1,0 +1,97 @@
+{
+  "id": "fastfood-coupon",
+  "service": "fastfood",
+  "title": "쿠폰 쓰고 결제하기",
+  "totalStages": 3,
+  "selectHref": "/fastfood/practice",
+  "realHref": "/fastfood/real",
+  "intro": {
+    "items": [
+      { "title": "주문 내역 확인하기", "detail": "불고기버거 세트 1개가 담긴 상태에서 시작해요" },
+      { "title": "쿠폰 사용하기", "detail": "2,000원 할인 쿠폰 · 휴대폰 바코드" },
+      { "title": "남은 금액 카드로 결제하기" }
+    ],
+    "estimatedMinutes": 4
+  },
+  "initialOrder": {
+    "dineOption": "dineIn",
+    "cart": [
+      {
+        "type": "burger",
+        "menuId": "bulgogi",
+        "set": true,
+        "side": "fries",
+        "drink": "zero",
+        "quantity": 1
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "PF02",
+      "screen": "orderReview",
+      "progress": { "stage": 1, "detail": "주문 내역 확인" },
+      "guide": {
+        "title": "주문 내역을 확인하고 주문 확인을 눌러 보세요",
+        "detail": "불고기버거 세트 1개가 담겨 있어요"
+      },
+      "target": { "id": "review:next", "label": "주문 확인을" }
+    },
+    {
+      "id": "PF03",
+      "screen": "paymentMethod",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (1/3)" },
+      "guide": { "title": "쿠폰·포인트를 눌러 보세요", "detail": "할인 쿠폰을 먼저 적용해요" },
+      "target": { "id": "payment:couponPoint", "label": "쿠폰·포인트를" }
+    },
+    {
+      "id": "PF04",
+      "screen": "couponScan",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (2/3)" },
+      "guide": {
+        "title": "바코드를 찍었어요를 눌러 보세요",
+        "detail": "실제로는 휴대폰 쿠폰 바코드를 스캐너에 대요"
+      },
+      "target": { "id": "coupon:scanned", "label": "바코드를 찍었어요를" },
+      "action": { "type": "applyCoupon", "couponId": "set2000" }
+    },
+    {
+      "id": "PF05",
+      "screen": "couponApplied",
+      "progress": { "stage": 2, "detail": "쿠폰 사용하기 (3/3)" },
+      "guide": { "title": "할인된 금액을 확인하고 다음을 눌러 보세요" },
+      "target": { "id": "coupon:next", "label": "다음을" }
+    },
+    {
+      "id": "PF06",
+      "screen": "paymentMethod",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (1/3)" },
+      "guide": { "title": "신용·체크카드를 눌러 보세요" },
+      "target": { "id": "payment:card", "label": "신용·체크카드를" },
+      "action": { "type": "selectPayment", "value": "card" }
+    },
+    {
+      "id": "PF07",
+      "screen": "cardInsert",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (2/3)" },
+      "guide": {
+        "title": "카드를 넣었어요를 눌러 보세요",
+        "detail": "실제로는 IC칩이 위로 가게 카드를 넣어요"
+      },
+      "target": { "id": "card:inserted", "label": "카드를 넣었어요를" },
+      "action": { "type": "completePayment" }
+    },
+    {
+      "id": "PF08",
+      "screen": "paymentDone",
+      "progress": { "stage": 3, "detail": "남은 금액 카드로 결제하기 (3/3)" },
+      "guide": {
+        "title": "주문번호를 확인하고 확인을 눌러 보세요",
+        "detail": "화면에 이 번호가 뜨면 음식을 받아요"
+      },
+      "target": { "id": "done:confirm", "label": "확인을" }
+    }
+  ],
+  "orderNumber": "A-129",
+  "summary": ["주문 내역 확인 · 불고기버거 세트", "2,000원 할인 쿠폰 사용", "카드 결제 5,200원"]
+}

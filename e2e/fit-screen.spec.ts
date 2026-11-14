@@ -70,6 +70,7 @@ for (const mission of [
   "cafe/practice/coupon",
   "fastfood/practice/basic",
   "fastfood/practice/set",
+  "fastfood/practice/coupon",
 ]) {
   test(`${mission} 미션은 휴대폰에서 눌러야 할 곳이 항상 화면 안에 보인다`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });

@@ -5,6 +5,7 @@ export type PracticeScreen =
   | "dineOption"
   | "menu"
   | "setChoice"
+  | "setCompose"
   | "burgerConfirm"
   | "options"
   | "paidOptions"
@@ -41,6 +42,19 @@ export type PracticeStep = {
   action?: OrderAction;
   /** 이 화면에서 미션과 다르게 고를 수 있는 칸 (PX2) */
   detours?: PracticeDetour[];
+  /**
+   * 특히 헷갈리기 쉬운 칸을 눌렀을 때 일반 안내 대신 보여 줄 빨간 안내 (PX3). 선택은 바뀌지 않는다.
+   * 예: 단품을 골라야 하는데 세트를 누르면 "치즈버거는 단품이에요. 단품을 눌러 보세요"
+   */
+  mistakes?: PracticeMistake[];
+};
+
+export type PracticeMistake = {
+  trigger: string;
+  guide: {
+    title: string;
+    detail?: string;
+  };
 };
 
 /**

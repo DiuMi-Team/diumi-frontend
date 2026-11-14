@@ -1,5 +1,5 @@
 import type { CafeMenuId, PaidOptionId } from "@/features/cafe/catalog";
-import type { BurgerId } from "@/features/fastfood/catalog";
+import type { BurgerId, SetDrinkId, SideId } from "@/features/fastfood/catalog";
 
 /* 키오스크 화면 그림. design/screens의 SVG를 그대로 옮겼다. */
 
@@ -439,6 +439,54 @@ export function SetMealIcon({ burgerId, width }: { burgerId: BurgerId; width: nu
       <g transform="translate(0 8) scale(.85)">
         <BurgerLayers burgerId={burgerId} />
       </g>
+    </svg>
+  );
+}
+
+/** 세트 사이드 그림 (감자튀김·샐러드·치킨너겟) */
+export function SideIcon({ sideId, size }: IconProps & { sideId: SideId }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      {sideId === "fries" && <FriesLayers />}
+      {sideId === "salad" && (
+        <>
+          <circle cx="21" cy="28" r="9" fill="#5AC7C3" />
+          <circle cx="32" cy="23" r="10" fill="#B9E6E8" />
+          <circle cx="43" cy="28" r="9" fill="#5AC7C3" />
+          <circle cx="31" cy="29" r="4" fill="#F5A65B" />
+          <path d="M8 32h48a24 22 0 0 1-48 0z" fill="#55A4E3" />
+        </>
+      )}
+      {sideId === "nuggets" && (
+        <>
+          <rect x="12" y="16" width="16" height="16" rx="7" fill="#F5A65B" />
+          <rect x="26" y="12" width="16" height="18" rx="7" fill="#F5A65B" />
+          <rect x="38" y="17" width="15" height="15" rx="7" fill="#F5A65B" />
+          <path d="M8 28h48l-4 26a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3z" fill="#3D3531" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** 세트 음료 그림 (콜라·제로콜라·오렌지) */
+export function SetDrinkIcon({ drinkId, size }: IconProps & { drinkId: SetDrinkId }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      <path d="M38 2l-4 14" stroke="#3D3531" strokeWidth="3.5" strokeLinecap="round" />
+      <path
+        d="M17 21h30l-3 32a4 4 0 0 1-4 3H24a4 4 0 0 1-4-3z"
+        fill={drinkId === "orange" ? "#F5A65B" : "#3D3531"}
+      />
+      <rect x="14" y="14" width="36" height="8" rx="4" fill="#DFEBEC" />
+      {drinkId === "zero" ? (
+        <>
+          <circle cx="32" cy="37" r="7" fill="#5AC7C3" />
+          <circle cx="32" cy="37" r="3.5" fill="none" stroke="#FDFDFD" strokeWidth="2" />
+        </>
+      ) : (
+        <circle cx="32" cy="37" r="7" fill="#FDFDFD" />
+      )}
     </svg>
   );
 }

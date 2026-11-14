@@ -16,6 +16,7 @@ export default function FastfoodPracticeSelectPage() {
           title: "불고기버거 세트, 치즈버거 단품 담기",
           description: "옵션 포함 · 세트 구성·음료 변경",
           icon: <FriesIcon size={48} />,
+          href: "/fastfood/practice/set",
         },
         {
           title: "쿠폰 쓰고 결제하기",

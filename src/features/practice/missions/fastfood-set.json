@@ -1,0 +1,172 @@
+{
+  "id": "fastfood-set",
+  "service": "fastfood",
+  "title": "불고기버거 세트, 치즈버거 단품 담기",
+  "totalStages": 4,
+  "selectHref": "/fastfood/practice",
+  "realHref": "/fastfood/real",
+  "intro": {
+    "items": [
+      { "title": "매장에서 먹기로 주문하기" },
+      { "title": "불고기버거 세트 1개 담기", "detail": "사이드 감자튀김 · 음료는 제로콜라로 변경" },
+      { "title": "치즈버거 단품 1개 담기" },
+      { "title": "카드로 결제하기" }
+    ],
+    "estimatedMinutes": 5
+  },
+  "steps": [
+    {
+      "id": "PB02",
+      "screen": "dineOption",
+      "progress": { "stage": 1, "detail": "매장 선택" },
+      "guide": { "title": "매장에서 먹어요를 눌러 보세요", "detail": "주황 테두리 버튼이에요" },
+      "target": { "id": "dine:dineIn", "label": "매장에서 먹어요를" },
+      "action": { "type": "setDineOption", "value": "dineIn" }
+    },
+    {
+      "id": "PB03",
+      "screen": "menu",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (1/6)" },
+      "guide": { "title": "불고기버거를 눌러 보세요" },
+      "target": { "id": "menu:bulgogi", "label": "불고기버거를" },
+      "action": { "type": "selectBurger", "menuId": "bulgogi" }
+    },
+    {
+      "id": "PB04",
+      "screen": "setChoice",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (2/6)" },
+      "guide": { "title": "세트를 눌러 보세요", "detail": "버거 + 사이드 + 음료가 함께 나와요" },
+      "target": { "id": "set:set", "label": "세트를" },
+      "action": { "type": "chooseSet", "set": true }
+    },
+    {
+      "id": "PB05",
+      "screen": "setCompose",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (3/6)" },
+      "guide": { "title": "사이드에서 감자튀김을 눌러 보세요" },
+      "target": { "id": "side:fries", "label": "감자튀김을" },
+      "action": { "type": "setSide", "value": "fries" }
+    },
+    {
+      "id": "PB06",
+      "screen": "setCompose",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (4/6)" },
+      "guide": {
+        "title": "음료에서 제로콜라를 눌러 보세요",
+        "detail": "기본 콜라 대신 제로콜라로 바꿔요"
+      },
+      "target": { "id": "drink:zero", "label": "제로콜라를" },
+      "action": { "type": "setSetDrink", "value": "zero" }
+    },
+    {
+      "id": "PB07",
+      "screen": "setCompose",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (5/6)" },
+      "guide": {
+        "title": "선택 완료를 눌러 보세요",
+        "detail": "감자튀김 · 제로콜라가 맞는지 확인해요"
+      },
+      "target": { "id": "setCompose:confirm", "label": "선택 완료를" }
+    },
+    {
+      "id": "PB08",
+      "screen": "burgerConfirm",
+      "progress": { "stage": 2, "detail": "불고기버거 세트 담기 (6/6)" },
+      "guide": { "title": "장바구니 담기를 눌러 보세요" },
+      "target": { "id": "burger:addToCart", "label": "장바구니 담기를" },
+      "action": { "type": "addDraftToCart" }
+    },
+    {
+      "id": "PB09",
+      "screen": "menu",
+      "progress": { "stage": 3, "detail": "치즈버거 단품 담기 (1/3)" },
+      "guide": {
+        "title": "이번엔 치즈버거를 눌러 보세요",
+        "detail": "불고기버거 세트가 아래에 담겼어요"
+      },
+      "target": { "id": "menu:cheese", "label": "치즈버거를" },
+      "action": { "type": "selectBurger", "menuId": "cheese" }
+    },
+    {
+      "id": "PB10",
+      "screen": "setChoice",
+      "progress": { "stage": 3, "detail": "치즈버거 단품 담기 (2/3)" },
+      "guide": { "title": "이번에는 단품을 눌러 보세요", "detail": "버거만 하나 주문해요" },
+      "target": { "id": "set:single", "label": "단품을" },
+      "action": { "type": "chooseSet", "set": false },
+      "mistakes": [
+        {
+          "trigger": "set:set",
+          "guide": {
+            "title": "치즈버거는 단품이에요. 단품을 눌러 보세요",
+            "detail": "세트는 담기지 않았어요"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PB11",
+      "screen": "burgerConfirm",
+      "progress": { "stage": 3, "detail": "치즈버거 단품 담기 (3/3)" },
+      "guide": {
+        "title": "장바구니 담기를 눌러 보세요",
+        "detail": "치즈버거 단품 1개가 맞는지 확인해요"
+      },
+      "target": { "id": "burger:addToCart", "label": "장바구니 담기를" },
+      "action": { "type": "addDraftToCart" }
+    },
+    {
+      "id": "PB12",
+      "screen": "menu",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (1/5)" },
+      "guide": {
+        "title": "주문 내역 확인 후 결제하기를 눌러 보세요",
+        "detail": "버거 2개가 담겼어요"
+      },
+      "target": { "id": "menu:checkout", "label": "주문 내역 확인 후 결제하기를" }
+    },
+    {
+      "id": "PB13",
+      "screen": "orderReview",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (2/5)" },
+      "guide": { "title": "주문 내역을 확인하고 주문 확인을 눌러 보세요" },
+      "target": { "id": "review:next", "label": "주문 확인을" }
+    },
+    {
+      "id": "PB14",
+      "screen": "paymentMethod",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (3/5)" },
+      "guide": { "title": "신용·체크카드를 눌러 보세요" },
+      "target": { "id": "payment:card", "label": "신용·체크카드를" },
+      "action": { "type": "selectPayment", "value": "card" }
+    },
+    {
+      "id": "PB15",
+      "screen": "cardInsert",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (4/5)" },
+      "guide": {
+        "title": "카드를 넣었어요를 눌러 보세요",
+        "detail": "실제로는 IC칩이 위로 가게 카드를 넣어요"
+      },
+      "target": { "id": "card:inserted", "label": "카드를 넣었어요를" },
+      "action": { "type": "completePayment" }
+    },
+    {
+      "id": "PB16",
+      "screen": "paymentDone",
+      "progress": { "stage": 4, "detail": "카드로 결제하기 (5/5)" },
+      "guide": {
+        "title": "주문번호를 확인하고 확인을 눌러 보세요",
+        "detail": "화면에 이 번호가 뜨면 음식을 받아요"
+      },
+      "target": { "id": "done:confirm", "label": "확인을" }
+    }
+  ],
+  "orderNumber": "A-127",
+  "summary": [
+    "매장 식사 선택",
+    "불고기버거 세트 · 감자튀김 · 제로콜라",
+    "치즈버거 단품 1개",
+    "카드 결제 12,500원"
+  ]
+}

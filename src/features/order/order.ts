@@ -15,9 +15,12 @@ import {
 } from "@/features/cafe/catalog";
 import {
   getBurger,
-  SET_CONTENTS,
+  getSetDrink,
+  getSide,
   SINGLE_CONTENTS,
   type BurgerId,
+  type SetDrinkId,
+  type SideId,
 } from "@/features/fastfood/catalog";
 
 /** 키오스크 주문 상태. 연습 엔진은 단계마다 이 상태에 동작을 하나씩 적용한다. */
@@ -38,11 +41,13 @@ export type DrinkItem = {
   paidOptions: PaidOptionCounts;
 };
 
-/** 패스트푸드 버거. 세트면 감자튀김과 콜라가 함께 나온다 */
+/** 패스트푸드 버거. 세트면 사이드와 음료가 함께 나오고, 단품이면 둘 다 null이다 */
 export type BurgerItem = {
   type: "burger";
   menuId: BurgerId;
   set: boolean;
+  side: SideId | null;
+  drink: SetDrinkId | null;
   quantity: number;
 };
 
@@ -71,6 +76,8 @@ export type OrderAction =
   | { type: "selectMenu"; menuId: CafeMenuId }
   | { type: "selectBurger"; menuId: BurgerId }
   | { type: "chooseSet"; set: boolean }
+  | { type: "setSide"; value: SideId }
+  | { type: "setSetDrink"; value: SetDrinkId }
   | { type: "setTemperature"; value: Temperature }
   | { type: "setSize"; value: CupSize }
   | { type: "setQuantity"; value: number }
@@ -108,10 +115,30 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "selectBurger":
       return {
         ...state,
-        draft: { type: "burger", menuId: action.menuId, set: null, quantity: 1 },
+        draft: {
+          type: "burger",
+          menuId: action.menuId,
+          set: null,
+          side: null,
+          drink: null,
+          quantity: 1,
+        },
       };
     case "chooseSet":
-      return { ...state, draft: { ...requireBurgerDraft(state), set: action.set } };
+      return {
+        ...state,
+        draft: {
+          ...requireBurgerDraft(state),
+          set: action.set,
+          /* 세트의 사이드·음료는 손님이 직접 고른다. "기본"은 추가 금액이 없다는 표시일 뿐이다 */
+          side: null,
+          drink: null,
+        },
+      };
+    case "setSide":
+      return { ...state, draft: { ...requireSetDraft(state), side: action.value } };
+    case "setSetDrink":
+      return { ...state, draft: { ...requireSetDraft(state), drink: action.value } };
     case "setTemperature":
       return { ...state, draft: { ...requireDrinkDraft(state), temperature: action.value } };
     case "setSize":
@@ -163,6 +190,12 @@ function requireBurgerDraft(state: OrderState): BurgerDraft {
   return draft;
 }
 
+function requireSetDraft(state: OrderState): BurgerDraft {
+  const draft = requireBurgerDraft(state);
+  if (!draft.set) throw new Error("사이드와 음료는 세트를 고른 뒤에 바꿀 수 있어요");
+  return draft;
+}
+
 /** 장바구니에 담을 수 있게 다 골랐는지 확인한다 */
 function completeDraft(draft: DraftItem): CartItem {
   if (draft.type === "drink") {
@@ -170,6 +203,9 @@ function completeDraft(draft: DraftItem): CartItem {
     return { ...draft, temperature: draft.temperature };
   }
   if (draft.set === null) throw new Error("세트/단품을 먼저 골라야 해요");
+  if (draft.set && (!draft.side || !draft.drink)) {
+    throw new Error("세트의 사이드와 음료를 먼저 골라야 해요");
+  }
   return { ...draft, set: draft.set };
 }
 
@@ -192,7 +228,12 @@ export function paidOptionsPrice(counts: PaidOptionCounts): number {
 export function itemUnitPrice(item: CartItem | DraftItem): number {
   if (item.type === "burger") {
     const burger = getBurger(item.menuId);
-    return item.set ? burger.setPrice : burger.price;
+    if (!item.set) return burger.price;
+    return (
+      burger.setPrice +
+      (item.side ? getSide(item.side).extra : 0) +
+      (item.drink ? getSetDrink(item.drink).extra : 0)
+    );
   }
   return (
     getCafeMenu(item.menuId).price +
@@ -245,7 +286,7 @@ export function itemUnit(item: CartItem | DraftItem): string {
  * 장바구니 요약처럼 좁은 곳은 short로 "휘핑". 옵션을 2개 이상 고르면 "휘핑크림 2"처럼 개수를 붙인다.
  */
 export function itemDetail(item: CartItem, { short = false } = {}): string {
-  if (item.type === "burger") return item.set ? SET_CONTENTS : SINGLE_CONTENTS;
+  if (item.type === "burger") return setContents(item) ?? SINGLE_CONTENTS;
   const extras = selectedPaidOptions(item.paidOptions).map(([option, count]) => {
     const name = short ? option.shortName : option.name;
     return count > 1 ? `${name} ${count}` : name;
@@ -263,4 +304,13 @@ export function paidOptionsSummary(counts: PaidOptionCounts): string {
 /** 3200 → "3,200원" */
 export function formatWon(amount: number): string {
   return `${amount.toLocaleString("ko-KR")}원`;
+}
+
+/** 세트 구성 "감자튀김 · 제로콜라". 단품이면 null */
+export function setContents(
+  item: Pick<BurgerItem, "set" | "side" | "drink">,
+  separator = " · ",
+): string | null {
+  if (!item.set || !item.side || !item.drink) return null;
+  return [getSide(item.side).name, getSetDrink(item.drink).name].join(separator);
 }

@@ -17,6 +17,7 @@ const SMALL_PHONE = { width: 375, height: 553 };
  * - options:9, options:10 = 카페 유료 옵션 화면 (PA11, PA12)
  * - options:12 = 두 메뉴가 담긴 카페 결제하기 화면 (PA14)
  * - fastfood basic:4 = 안내가 세 줄인 패스트푸드 결제하기 화면 (PE06)
+ * - fastfood set:10 = 버거 두 개가 담긴 패스트푸드 결제하기 화면 (PB12)
  */
 const ALLOWED_TO_SCROLL = new Set([
   "cafe/practice/basic:2",
@@ -26,6 +27,7 @@ const ALLOWED_TO_SCROLL = new Set([
   "cafe/practice/options:11",
   "cafe/practice/options:12",
   "fastfood/practice/basic:4",
+  "fastfood/practice/set:10",
 ]);
 
 test.use({ viewport: PHONE });
@@ -67,6 +69,7 @@ for (const mission of [
   "cafe/practice/options",
   "cafe/practice/coupon",
   "fastfood/practice/basic",
+  "fastfood/practice/set",
 ]) {
   test(`${mission} 미션은 휴대폰에서 눌러야 할 곳이 항상 화면 안에 보인다`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });

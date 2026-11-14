@@ -1,10 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BurgerIcon } from "@/components/icons/kiosk-icons";
+import { BurgerIcon, SetMealIcon } from "@/components/icons/kiosk-icons";
 import { KioskButton, usePractice } from "@/components/practice/PracticeContext";
 import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/kiosk/parts";
-import { SET_CONTENTS, SINGLE_CONTENTS } from "@/features/fastfood/catalog";
+import { getSetDrink, getSide, SINGLE_CONTENTS } from "@/features/fastfood/catalog";
 import { formatWon, itemName, itemPrice } from "@/features/order/order";
 
 const QUANTITY_IDS = ["quantity:decrease", "quantity:increase"];
@@ -23,13 +23,21 @@ export function BurgerConfirmScreen() {
       <h2 className="mt-0.5 text-22 font-bold">선택한 메뉴를 확인해 주세요</h2>
       <div className="flex flex-col rounded-3xl bg-gray-1 px-[18px] pt-3.5 pb-2 short:pt-2.5 short:pb-1">
         <div className="flex items-center gap-3 pb-2.5 short:pb-1.5">
-          <BurgerIcon burgerId={draft.menuId} size={52} shadow={false} />
+          {draft.set ? (
+            <SetMealIcon burgerId={draft.menuId} width={84} />
+          ) : (
+            <BurgerIcon burgerId={draft.menuId} size={52} shadow={false} />
+          )}
           <b className="text-20">{itemName(draft)}</b>
         </div>
-        <div className="flex h-[52px] items-center justify-between border-t-2 border-white text-17 short:h-12">
-          <span>구성</span>
-          <b>{draft.set ? SET_CONTENTS : SINGLE_CONTENTS}</b>
-        </div>
+        {draft.set && draft.side && draft.drink ? (
+          <>
+            <InfoRow label="사이드" value={`${getSide(draft.side).name} ›`} />
+            <InfoRow label="음료" value={`${getSetDrink(draft.drink).name} ›`} />
+          </>
+        ) : (
+          <InfoRow label="구성" value={SINGLE_CONTENTS} />
+        )}
         <div className="flex h-[60px] items-center justify-between border-t-2 border-white text-17 short:h-[52px]">
           <span>수량</span>
           <span className={`flex items-center gap-3 ${quantity.groupClass}`}>
@@ -62,6 +70,15 @@ export function BurgerConfirmScreen() {
         장바구니 담기
       </KioskButton>
     </>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex h-[52px] items-center justify-between border-t-2 border-white text-17 short:h-12">
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   cafeCoupon,
   cafeOptions,
   fastfoodBasic,
+  fastfoodSet,
   PRACTICE_MISSIONS,
 } from "@/features/practice/missions";
 
@@ -44,6 +45,12 @@ describe.each(PRACTICE_MISSIONS.map((mission) => [mission.id, mission] as const)
       mission.steps
         .flatMap((step) => step.detours ?? [])
         .forEach((detour) => expect(detour.fix.label).toMatch(/[을를]$/));
+    });
+
+    it("헷갈리기 쉬운 칸은 눌러야 할 곳과 다르다", () => {
+      mission.steps.forEach((step) =>
+        step.mistakes?.forEach((mistake) => expect(mistake.trigger).not.toBe(step.target.id)),
+      );
     });
 
     it("다르게 고른 것을 바로잡으면 원래 단계의 상태로 정확히 돌아온다", () => {
@@ -136,13 +143,33 @@ describe("패스트푸드 단품 기본 미션", () => {
     const final = orderAt(fastfoodBasic, { kind: "complete" });
     expect(final.dineOption).toBe("dineIn");
     expect(final.paymentMethod).toBe("card");
-    expect(final.cart).toEqual([{ type: "burger", menuId: "bulgogi", set: false, quantity: 1 }]);
+    expect(final.cart).toEqual([
+      { type: "burger", menuId: "bulgogi", set: false, side: null, drink: null, quantity: 1 },
+    ]);
     expect(payableTotal(final)).toBe(4800);
   });
 
   it("디자인의 PE02~PE10 화면을 순서대로 거친다", () => {
     expect(fastfoodBasic.steps.map((step) => step.id)).toEqual(
       Array.from({ length: 9 }, (_, i) => `PE${String(i + 2).padStart(2, "0")}`),
+    );
+  });
+});
+
+describe("패스트푸드 세트+단품 미션", () => {
+  it("불고기버거 세트(감자튀김·제로콜라)와 치즈버거 단품, 12,500원이다", () => {
+    const final = orderAt(fastfoodSet, { kind: "complete" });
+    expect(final.dineOption).toBe("dineIn");
+    expect(final.cart.map((item) => [item.menuId, itemDetail(item), item.quantity])).toEqual([
+      ["bulgogi", "감자튀김 · 제로콜라", 1],
+      ["cheese", "버거만", 1],
+    ]);
+    expect(payableTotal(final)).toBe(12500);
+  });
+
+  it("디자인의 PB02~PB16 화면을 순서대로 거친다", () => {
+    expect(fastfoodSet.steps.map((step) => step.id)).toEqual(
+      Array.from({ length: 15 }, (_, i) => `PB${String(i + 2).padStart(2, "0")}`),
     );
   });
 });

@@ -29,7 +29,13 @@ export type PaymentChoice = {
 type KioskCopy = {
   serviceName: string;
   dine: { title: string; sub: string };
-  board: { categories: readonly string[]; defaultCategory: string; items: BoardItem[] };
+  board: {
+    categories: readonly string[];
+    defaultCategory: string;
+    items: BoardItem[];
+    /** 장바구니가 차 있을 때 메뉴를 더 고르라는 제목 */
+    moreTitle: string;
+  };
   /** 메뉴판 아래 결제로 넘어가는 버튼 */
   checkout: { label: string; chevron: boolean };
   review: { addMore: string; next: string };
@@ -62,6 +68,7 @@ export const KIOSK_COPY: Record<PracticeService, KioskCopy> = {
     board: {
       categories: CAFE_CATEGORIES,
       defaultCategory: DEFAULT_CATEGORY,
+      moreTitle: "메뉴를 더 담아 보세요",
       items: CAFE_MENUS.map((menu) => ({
         id: `menu:${menu.id}`,
         name: menu.name,
@@ -80,6 +87,7 @@ export const KIOSK_COPY: Record<PracticeService, KioskCopy> = {
     board: {
       categories: BURGER_CATEGORIES,
       defaultCategory: DEFAULT_BURGER_CATEGORY,
+      moreTitle: "메뉴를 더 골라 보세요",
       items: BURGERS.map((burger) => ({
         id: `menu:${burger.id}`,
         name: burger.name,

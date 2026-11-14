@@ -49,7 +49,7 @@ test("모드 선택에서 연습모드 → 미션 선택 → 패스트푸드 기
 
 test("아직 만들지 않은 패스트푸드 미션은 준비 중 안내를 띄운다", async ({ page }) => {
   await page.goto("/fastfood/practice");
-  for (const name of [/치즈버거 단품 담기/, /쿠폰 쓰고 결제하기/]) {
+  for (const name of [/쿠폰 쓰고 결제하기/]) {
     await page.getByRole("button", { name }).click();
     const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
     await expect(dialog).toBeVisible();

@@ -118,7 +118,10 @@ export function previousPosition(
   }
 }
 
-export type TapResult = { kind: "move"; position: PracticePosition } | { kind: "miss" };
+/** 잘못 눌렀을 때 빨간 안내. guide가 없으면 기본 문구(defaultMissGuide)를 쓴다 */
+export type TapResult =
+  | { kind: "move"; position: PracticePosition }
+  | { kind: "miss"; guide?: { title: string; detail?: string } };
 
 /**
  * 화면의 무언가를 눌렀을 때.
@@ -146,10 +149,16 @@ export function tap(
   if (detour >= 0) {
     return { kind: "move", position: { kind: "step", index: position.index, detour } };
   }
-  return { kind: "miss" };
+  const mistake = step.mistakes?.find((item) => item.trigger === targetId);
+  return mistake ? { kind: "miss", guide: mistake.guide } : { kind: "miss" };
 }
 
 /** 잘못 눌렀을 때 빨간 말풍선 문구 */
 export function missMessage(step: Pick<PracticeStep, "target">): string {
   return `다른 곳을 눌렀어요. 주황 테두리의 ${step.target.label} 눌러 보세요`;
+}
+
+/** 기본 빨간 안내 (PX1) */
+export function defaultMissGuide(step: Pick<PracticeStep, "target">) {
+  return { title: missMessage(step), detail: "선택은 바뀌지 않았어요" };
 }

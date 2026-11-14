@@ -12,6 +12,7 @@ import { PaidOptionsScreen } from "@/components/practice/kiosk/PaidOptionsScreen
 import { PaymentDoneScreen } from "@/components/practice/kiosk/PaymentDoneScreen";
 import { PaymentMethodScreen } from "@/components/practice/kiosk/PaymentMethodScreen";
 import { SetChoiceScreen } from "@/components/practice/kiosk/SetChoiceScreen";
+import { SetComposeScreen } from "@/components/practice/kiosk/SetComposeScreen";
 import type { PracticeScreen } from "@/features/practice/types";
 
 /** 미션 데이터의 screen 이름 → 키오스크 화면 (카페·패스트푸드 공통) */
@@ -19,6 +20,7 @@ export const KIOSK_SCREENS: Record<PracticeScreen, ComponentType> = {
   dineOption: DineOptionScreen,
   menu: MenuScreen,
   setChoice: SetChoiceScreen,
+  setCompose: SetComposeScreen,
   burgerConfirm: BurgerConfirmScreen,
   options: OptionsScreen,
   paidOptions: PaidOptionsScreen,
@@ -35,4 +37,5 @@ export const KIOSK_SCREENS: Record<PracticeScreen, ComponentType> = {
 export const SCREEN_GAP: Partial<Record<PracticeScreen, string>> = {
   options: "gap-2.5 short:gap-1",
   paidOptions: "gap-2.5 short:gap-1",
+  setCompose: "gap-2.5 short:gap-1.5",
 };

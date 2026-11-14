@@ -16,7 +16,7 @@ import { MissionIntro } from "@/components/practice/MissionIntro";
 import { PracticeProvider } from "@/components/practice/PracticeContext";
 import {
   activeStep,
-  missMessage,
+  defaultMissGuide,
   nextPosition,
   orderAt,
   previousPosition,
@@ -30,7 +30,8 @@ import type { PracticeMission } from "@/features/practice/types";
 export function PracticeRunner({ mission }: { mission: PracticeMission }) {
   const router = useRouter();
   const [position, setPosition] = useState<PracticePosition>(START_POSITION);
-  const [missed, setMissed] = useState(false);
+  /** 잘못 눌렀을 때 보여 줄 빨간 안내. null이면 평소 안내 */
+  const [miss, setMiss] = useState<{ title: string; detail?: string } | null>(null);
   const [quitOpen, setQuitOpen] = useState(false);
   const focusRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -51,12 +52,12 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
     main
       .querySelector("[data-practice-target]")
       ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
-  }, [position, missed]);
+  }, [position, miss]);
 
   const move = (next: PracticePosition) => {
     movedRef.current = true;
     setPosition(next);
-    setMissed(false);
+    setMiss(null);
   };
 
   const goBack = () => {
@@ -111,9 +112,9 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
           detail={step.progress.detail}
         />
         <div ref={focusRef} tabIndex={-1} className="outline-none">
-          {missed ? (
-            <GuideBubble variant="error" detail="선택은 바뀌지 않았어요">
-              {missMessage(step)}
+          {miss ? (
+            <GuideBubble variant="error" detail={miss.detail}>
+              {miss.title}
             </GuideBubble>
           ) : step.correcting ? (
             <GuideBubble variant="error" detail={step.guide.detail}>
@@ -133,7 +134,7 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
               if (result.kind === "move") move(result.position);
               else {
                 movedRef.current = true;
-                setMissed(true);
+                setMiss(result.guide ?? defaultMissGuide(step));
               }
             },
           }}

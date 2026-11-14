@@ -167,6 +167,8 @@ describe("주문 상태", () => {
       type: "burger",
       menuId: "bulgogi",
       set: null,
+      side: null,
+      drink: null,
       quantity: 1,
     });
     expect(() => run([start, { type: "addDraftToCart" }])).toThrow("세트/단품");
@@ -177,10 +179,48 @@ describe("주문 상태", () => {
     expect(itemDetail(single.cart[0])).toBe("버거만");
     expect(itemUnit(single.cart[0])).toBe("개");
 
-    const set = run([start, { type: "chooseSet", set: true }, { type: "addDraftToCart" }]);
+    expect(() =>
+      run([start, { type: "chooseSet", set: true }, { type: "addDraftToCart" }]),
+    ).toThrow("사이드와 음료");
+    const set = run([
+      start,
+      { type: "chooseSet", set: true },
+      { type: "setSide", value: "fries" },
+      { type: "setSetDrink", value: "cola" },
+      { type: "addDraftToCart" },
+    ]);
     expect(cartTotal(set.cart)).toBe(7200);
     expect(itemName(set.cart[0])).toBe("불고기버거 세트");
-    expect(itemDetail(set.cart[0])).toBe("버거 + 감자튀김 + 콜라");
+    expect(itemDetail(set.cart[0])).toBe("감자튀김 · 콜라");
+  });
+
+  it("세트는 사이드·음료를 바꿀 수 있고, 바꾸면 추가 금액이 붙는다", () => {
+    const set: OrderAction[] = [
+      { type: "selectBurger", menuId: "bulgogi" },
+      { type: "chooseSet", set: true },
+      { type: "setSide", value: "fries" },
+    ];
+    const zero = run([...set, { type: "setSetDrink", value: "zero" }, { type: "addDraftToCart" }]);
+    expect(itemDetail(zero.cart[0])).toBe("감자튀김 · 제로콜라");
+    expect(cartTotal(zero.cart)).toBe(7200);
+
+    const upgraded = run([
+      ...set,
+      { type: "setSide", value: "nuggets" },
+      { type: "setSetDrink", value: "orange" },
+      { type: "addDraftToCart" },
+    ]);
+    expect(cartTotal(upgraded.cart)).toBe(7200 + 800 + 500);
+  });
+
+  it("단품으로 바꾸면 사이드·음료가 빠지고, 단품은 사이드를 고를 수 없다", () => {
+    const single = run([
+      { type: "selectBurger", menuId: "cheese" },
+      { type: "chooseSet", set: true },
+      { type: "chooseSet", set: false },
+    ]);
+    expect(single.draft).toMatchObject({ set: false, side: null, drink: null });
+    expect(() => orderReducer(single, { type: "setSide", value: "salad" })).toThrow();
   });
 
   it("음료 옵션과 버거 옵션은 서로 섞어 쓸 수 없다", () => {

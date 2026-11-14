@@ -125,6 +125,35 @@ describe("단계별 주문 상태", () => {
   });
 });
 
+describe("헷갈리기 쉬운 칸을 누른 경우 (PX3)", () => {
+  const withMistake: PracticeMission = {
+    ...mission,
+    steps: [
+      {
+        ...mission.steps[0],
+        mistakes: [
+          {
+            trigger: "dine:dineIn",
+            guide: { title: "미션은 포장이에요", detail: "선택은 그대로예요" },
+          },
+        ],
+      },
+      mission.steps[1],
+    ],
+  };
+
+  it("맞춤 빨간 안내를 돌려주고 위치는 그대로다", () => {
+    expect(tap(withMistake, step(0), "dine:dineIn")).toEqual({
+      kind: "miss",
+      guide: { title: "미션은 포장이에요", detail: "선택은 그대로예요" },
+    });
+  });
+
+  it("그 밖의 칸은 기본 빨간 안내다", () => {
+    expect(tap(withMistake, step(0), "menu:americano")).toEqual({ kind: "miss" });
+  });
+});
+
 describe("미션과 다르게 고른 경우 (PX2)", () => {
   const withDetour: PracticeMission = {
     ...mission,

@@ -10,6 +10,7 @@ import {
   formatWon,
   itemDetail,
   itemName,
+  setContents,
   type CartItem,
 } from "@/features/order/order";
 
@@ -32,7 +33,7 @@ export function MenuScreen() {
     <>
       {choosingMenu && (
         <h2 className="text-22 font-bold">
-          {isEmpty ? "메뉴를 선택해 주세요" : "메뉴를 더 담아 보세요"}
+          {isEmpty ? "메뉴를 선택해 주세요" : copy.board.moreTitle}
         </h2>
       )}
       <section
@@ -109,13 +110,21 @@ function CartSummary({ cart }: { cart: CartItem[] }) {
         <span className="font-bold text-text-sub">담은 메뉴</span>
         {cart.map((item, index) => (
           <span key={index}>
-            {/* 버거는 "불고기버거 단품"처럼 이름에 구성이 들어 있어 설명을 붙이지 않는다 */}
-            {itemName(item)}
-            {item.type === "drink" && ` ${itemDetail(item, { short: true })}`} × {item.quantity}
+            {itemName(item)} {cartLineDetail(item)}× {item.quantity}
           </span>
         ))}
       </span>
       <b className="text-17 whitespace-nowrap">{formatWon(cartTotal(cart))}</b>
     </div>
   );
+}
+
+/**
+ * 담은 메뉴 한 줄의 설명. 음료는 "HOT · Regular · 휘핑", 세트는 "(감자튀김·제로콜라)".
+ * 단품은 "치즈버거 단품"처럼 이름에 구성이 들어 있어 설명을 붙이지 않는다.
+ */
+function cartLineDetail(item: CartItem): string {
+  if (item.type === "drink") return `${itemDetail(item, { short: true })} `;
+  const contents = setContents(item, "·");
+  return contents ? `(${contents}) ` : "";
 }

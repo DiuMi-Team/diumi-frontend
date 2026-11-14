@@ -22,6 +22,7 @@ export default function FastfoodPracticeSelectPage() {
           title: "쿠폰 쓰고 결제하기",
           description: "심화",
           icon: <CouponIcon size={48} tone="orange" />,
+          href: "/fastfood/practice/coupon",
         },
       ]}
     />

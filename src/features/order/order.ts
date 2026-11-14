@@ -1,18 +1,16 @@
 import {
   getCafeMenu,
-  getCoupon,
   getPaidOption,
   LARGE_EXTRA_PRICE,
   PAID_OPTIONS,
   SIZE_LABEL,
   TEMPERATURE_LABEL,
   type CafeMenuId,
-  type Coupon,
-  type CouponId,
   type CupSize,
   type PaidOptionId,
   type Temperature,
 } from "@/features/cafe/catalog";
+import { getCoupon, type Coupon, type CouponId } from "@/features/order/coupons";
 import {
   getBurger,
   getSetDrink,

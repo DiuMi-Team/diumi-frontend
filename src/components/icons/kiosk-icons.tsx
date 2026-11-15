@@ -506,3 +506,73 @@ export function IcedCoffeeIcon({ size, tone = "white" }: IconProps & { tone?: "w
     </svg>
   );
 }
+
+/** 휴대전화를 리더기에 대는 그림 (실전 모바일페이) */
+export function MobilePayTapIcon({ size }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <path
+        d="M48 18a14 14 0 0 1 0 20M53 13a21 21 0 0 1 0 30"
+        stroke="#55A4E3"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <rect x="14" y="3" width="28" height="55" rx="7" fill="#3D3531" />
+      <rect x="17" y="8" width="22" height="41" rx="3" fill="#B9E6E8" />
+      <circle cx="28" cy="28" r="8" fill="#F5A65B" />
+      <path
+        d="M24 28l3 3 5-6"
+        stroke="#FDFDFD"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+/** 기프트카드 뒷면 바코드를 스캐너에 보여 주는 그림 (실전 기프트카드) */
+export function GiftCardScanIcon({ size }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="6" y="12" width="52" height="34" rx="6" fill="#5AC7C3" />
+      <rect x="12" y="20" width="40" height="18" rx="3" fill="#FDFDFD" />
+      <path
+        d="M16 23v12M19 23v12M23 23v12M25 23v12M29 23v12M33 23v12M35 23v12M39 23v12M42 23v12M46 23v12M48 23v12"
+        stroke="#3D3531"
+        strokeWidth="1.6"
+      />
+      <path d="M4 54h56" stroke="#F5A65B" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** 카드를 투입구에 넣는 그림, 화살표 있음 (실전 신용·체크카드) */
+export function CardInsertArrowIcon({ size }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <rect
+        x="14"
+        y="4"
+        width="36"
+        height="30"
+        rx="5"
+        fill="#55A4E3"
+        transform="rotate(90 32 19)"
+      />
+      <rect x="24" y="8" width="8" height="10" rx="2" fill="#F5A65B" />
+      <path
+        d="M32 38v4M28 40l4 4 4-4"
+        stroke="#3D3531"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <path d="M8 46h48v12H8z" fill="#3D3531" />
+      <rect x="16" y="50" width="32" height="4" rx="2" fill="#FDFDFD" opacity=".6" />
+    </svg>
+  );
+}

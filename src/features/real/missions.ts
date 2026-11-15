@@ -26,6 +26,8 @@ export type RealMission = {
   };
   /** 실전 유형 선택 화면 (첫 화면의 이전으로) */
   typeHref: string;
+  /** 결제 완료 화면의 번호 (mock) */
+  orderNumber: string;
 };
 
 export const CAFE_REAL_MISSION: RealMission = {
@@ -41,4 +43,5 @@ export const CAFE_REAL_MISSION: RealMission = {
     paymentMethod: "card",
   },
   typeHref: "/cafe/real",
+  orderNumber: "133",
 };

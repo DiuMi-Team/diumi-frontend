@@ -37,4 +37,28 @@ export const VOICE_SAMPLES: Record<RealScreen, { question: string; answer: strin
     question: "쿠폰이 없으면요?",
     answer: "다음을 누르면 혜택 없이 결제로 넘어가요.",
   },
+  paymentMethod: {
+    question: "카드로 내려면요?",
+    answer: "신용·체크카드를 누르면 돼요.",
+  },
+  payMobile: {
+    question: "휴대폰을 어디에 대요?",
+    answer: "키오스크 아래쪽 리더기에 휴대폰 뒷면을 가까이 대 주세요.",
+  },
+  payGiftCard: {
+    question: "바코드는 어디 있어요?",
+    answer: "기프트카드 뒷면에 있어요. 스캐너에 보여 주세요.",
+  },
+  payCard: {
+    question: "카드는 어디에 넣나요?",
+    answer: "카드는 화면 아래쪽 투입구에 넣어 주세요.",
+  },
+  done: {
+    question: "이제 끝났나요?",
+    answer: "네, 결제가 끝났어요. 결제 완료 확인을 누르세요.",
+  },
+  result: {
+    question: "다시 해 볼 수 있나요?",
+    answer: "다시 도전하기를 누르면 처음부터 할 수 있어요.",
+  },
 };

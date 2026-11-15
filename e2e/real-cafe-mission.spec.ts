@@ -27,7 +27,7 @@ test("실전 유형 선택에서 미션 수행하기로 들어간다", async ({ 
   await expect(conditions).toContainText("카드 결제 완료");
 });
 
-test("강조 없이 스스로 아이스 아메리카노 Large 2잔을 포장으로 담고 혜택 화면까지 간다", async ({
+test("강조 없이 스스로 아이스 아메리카노 Large 2잔을 포장·카드로 주문하고 미션에 성공한다", async ({
   page,
 }) => {
   await startMission(page);
@@ -70,10 +70,109 @@ test("강조 없이 스스로 아이스 아메리카노 Large 2잔을 포장으�
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("6 / 9")).toBeVisible();
   await page.getByRole("button", { name: "다음" }).click();
-  const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "확인" }).click();
-  await expect(dialog).toBeHidden();
+
+  await expect(page.getByText("7 / 9")).toBeVisible();
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await expect(page.getByText("결제 · 신용·체크카드")).toBeVisible();
+  await expect(page.getByText("8 / 9")).toBeVisible();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await expect(page.getByText("9 / 9")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "결제가 완료되었습니다" })).toBeVisible();
+  await expect(main(page)).toContainText("133");
+  // 결제를 마치면 되돌아갈 수 없어 이전으로·음성 도우미가 없다
+  await expect(page.getByRole("navigation", { name: "화면 이동" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "음성 도우미" })).toHaveCount(0);
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await expect(page.getByRole("heading", { name: "미션을 성공했어요!" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
+    "aria-valuenow",
+    "100",
+  );
+  await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("도움 요청0회");
+  await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("초");
+  await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
+    "아이스 아메리카노 Large 2잔 · 포장 · 카드 결제",
+  );
+  await expect(page.getByRole("region", { name: "미션과 다른 점" })).toHaveCount(0);
+});
+
+/** 메뉴를 담고 결제 직전(결제 방식 선택)까지 간다 */
+async function goToPayment(page: Page) {
+  await page.getByRole("button", { name: "결제하기" }).click();
+  await page.getByRole("button", { name: "다음" }).click();
+  await page.getByRole("button", { name: "다음" }).click();
+  await expect(page.getByText("7 / 9")).toBeVisible();
+}
+
+test("미션과 다르게 주문하면 주문은 완료되고, 다른 점과 결과를 보여 준다", async ({ page }) => {
+  await startMission(page);
+  await page.getByRole("button", { name: "음성 도우미" }).click();
+  await page
+    .getByRole("dialog", { name: "AI 음성 도우미" })
+    .getByRole("button", { name: "닫기" })
+    .click();
+
+  await page.getByRole("button", { name: "포장해서 갈래요" }).click();
+  await page.getByRole("button", { name: "아메리카노 3,200원" }).click();
+  await page.getByRole("button", { name: "ICE" }).click();
+  await page.getByRole("button", { name: /^Extra/ }).click();
+  await page.getByRole("button", { name: "수량 더하기" }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+  await goToPayment(page);
+
+  await page.getByRole("button", { name: "모바일페이" }).click();
+  await expect(page.getByRole("heading", { name: "모바일페이로 결제해 주세요" })).toBeVisible();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await expect(page.getByRole("heading", { name: "주문은 완료됐어요" })).toBeVisible();
+  await expect(page.getByText("미션과 다른 부분이 있어요")).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
+    "aria-valuenow",
+    "50",
+  );
+  await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("도움 요청1회");
+  const differences = page.getByRole("region", { name: "미션과 다른 점" });
+  await expect(differences).toContainText("사이즈: Extra를 골랐어요 → 미션은 Large");
+  await expect(differences).toContainText("결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드");
+  await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
+    "아이스 아메리카노 Extra 2잔 · 포장 · 모바일페이 결제",
+  );
+});
+
+test("기프트카드로도 결제할 수 있고, 카드 화면에서는 결제 방법을 다시 고를 수 있다", async ({
+  page,
+}) => {
+  await startMission(page);
+  await addIcedAmericano(page);
+  await goToPayment(page);
+
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await page.getByRole("button", { name: "결제 방법 다시 선택" }).click();
+  await expect(page.getByText("7 / 9")).toBeVisible();
+
+  await page.getByRole("button", { name: "기프트카드" }).click();
+  await expect(page.getByRole("heading", { name: "기프트카드를 인식해 주세요" })).toBeVisible();
+  await expect(main(page)).toContainText("결제 예정 금액3,200원");
+  await page.getByRole("button", { name: "기프트카드 인식 완료" }).click();
+  await expect(page.getByRole("heading", { name: "결제가 완료되었습니다" })).toBeVisible();
+});
+
+test("다시 도전하기를 누르면 미션 확인부터 새로 시작한다", async ({ page }) => {
+  await startMission(page);
+  await addIcedAmericano(page);
+  await goToPayment(page);
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await page.getByRole("button", { name: "다시 도전하기" }).click();
+  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
+  await page.getByRole("button", { name: "포장해서 갈래요" }).click();
+  await expect(page.getByText("0개 · 0원")).toBeVisible();
 });
 
 test("온도를 고르지 않고 선택 완료를 누르면 온도를 고르라고 알려 준다", async ({ page }) => {

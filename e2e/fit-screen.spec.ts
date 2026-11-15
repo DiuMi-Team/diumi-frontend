@@ -169,4 +169,11 @@ test("실전 미션은 휴대폰에서 화면마다 다음으로 가는 버튼�
   await expectInView("다음");
   await page.getByRole("button", { name: "다음" }).click();
   await expectInView("다음");
+  await page.getByRole("button", { name: "다음" }).click();
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await expectInView("결제 완료 확인");
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await expectInView("결제 완료 확인");
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await expectInView("다시 도전하기");
 });

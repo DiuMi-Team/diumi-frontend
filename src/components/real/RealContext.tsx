@@ -14,7 +14,13 @@ type RealContextValue = {
   go: (screen: RealScreen) => void;
   /** 이전 화면으로 돌아간다 (유료·무료 옵션을 다 고르고 옵션 화면으로 돌아갈 때) */
   back: () => void;
-  /** 결제처럼 아직 만들지 않은 다음 단계 */
+  /** 결제를 마친다 (결제 수단 화면의 완료 버튼) */
+  finishPayment: (target: string) => void;
+  /** 다시 도전하기 */
+  restart: () => void;
+  /** 결과 화면에 보여 줄 소요 시간과 도움 요청 횟수 */
+  stats: { elapsedMs: number; helpCount: number };
+  /** 멤버십 적립처럼 아직 만들지 않은 기능 */
   comingSoon: () => void;
 };
 

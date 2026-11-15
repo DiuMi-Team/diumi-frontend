@@ -1,12 +1,16 @@
 import {
   getCafeMenu,
+  getFreeOptionChoice,
   getPaidOption,
-  LARGE_EXTRA_PRICE,
+  getSizeOption,
   PAID_OPTIONS,
+  SIZE_MENUS,
   SIZE_LABEL,
   TEMPERATURE_LABEL,
   type CafeMenuId,
   type CupSize,
+  type FreeOptionKey,
+  type SizeMenuId,
   type PaidOptionId,
   type Temperature,
 } from "@/features/cafe/catalog";
@@ -28,6 +32,8 @@ export type PaymentMethod = "mobilePay" | "card" | "giftCard";
 
 /** 유료 옵션별 개수. 고른 옵션만 들어 있다 */
 export type PaidOptionCounts = Partial<Record<PaidOptionId, number>>;
+/** 무료 옵션. 고른 것만 들어 있고, 없으면 기본값이다 */
+export type FreeOptionValues = Partial<Record<FreeOptionKey, string>>;
 
 /** 카페 음료 */
 export type DrinkItem = {
@@ -35,8 +41,11 @@ export type DrinkItem = {
   menuId: CafeMenuId;
   temperature: Temperature;
   size: CupSize;
+  /** 고른 사이즈의 추가 금액. 키오스크마다 달라서 고를 때 함께 기록한다 */
+  sizeExtra: number;
   quantity: number;
   paidOptions: PaidOptionCounts;
+  freeOptions: FreeOptionValues;
 };
 
 /** 패스트푸드 버거. 세트면 사이드와 음료가 함께 나오고, 단품이면 둘 다 null이다 */
@@ -59,6 +68,8 @@ export type BurgerDraft = Omit<BurgerItem, "set"> & { set: boolean | null };
 export type DraftItem = DrinkDraft | BurgerDraft;
 
 export type OrderState = {
+  /** 이 키오스크의 사이즈 메뉴 (연습: Regular·Large, 실전: Large·Extra) */
+  sizeMenu: SizeMenuId;
   dineOption: DineOption | null;
   cart: CartItem[];
   /** 선택 완료를 누르면 장바구니로 간다 */
@@ -80,12 +91,15 @@ export type OrderAction =
   | { type: "setSize"; value: CupSize }
   | { type: "setQuantity"; value: number }
   | { type: "setPaidOption"; option: PaidOptionId; count: number }
+  | { type: "setFreeOption"; key: FreeOptionKey; value: string }
+  | { type: "setCartQuantity"; index: number; value: number }
   | { type: "addDraftToCart" }
   | { type: "applyCoupon"; couponId: CouponId }
   | { type: "selectPayment"; value: PaymentMethod }
   | { type: "completePayment" };
 
 export const EMPTY_ORDER: OrderState = {
+  sizeMenu: "practice",
   dineOption: null,
   cart: [],
   draft: null,
@@ -105,9 +119,11 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           type: "drink",
           menuId: action.menuId,
           temperature: null,
-          size: "regular",
+          size: SIZE_MENUS[state.sizeMenu][0].id,
+          sizeExtra: 0,
           quantity: 1,
           paidOptions: {},
+          freeOptions: {},
         },
       };
     case "selectBurger":
@@ -140,7 +156,14 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "setTemperature":
       return { ...state, draft: { ...requireDrinkDraft(state), temperature: action.value } };
     case "setSize":
-      return { ...state, draft: { ...requireDrinkDraft(state), size: action.value } };
+      return {
+        ...state,
+        draft: {
+          ...requireDrinkDraft(state),
+          size: action.value,
+          sizeExtra: getSizeOption(state.sizeMenu, action.value).extra,
+        },
+      };
     case "setQuantity":
       assertCount(action.value, 1, "수량");
       return { ...state, draft: { ...requireDraft(state), quantity: action.value } };
@@ -150,6 +173,24 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       const paidOptions = { ...draft.paidOptions, [action.option]: action.count };
       if (action.count === 0) delete paidOptions[action.option];
       return { ...state, draft: { ...draft, paidOptions } };
+    }
+    case "setFreeOption": {
+      getFreeOptionChoice(action.key, action.value);
+      const draft = requireDrinkDraft(state);
+      return {
+        ...state,
+        draft: { ...draft, freeOptions: { ...draft.freeOptions, [action.key]: action.value } },
+      };
+    }
+    case "setCartQuantity": {
+      assertCount(action.value, 1, "수량");
+      if (!state.cart[action.index]) throw new Error(`장바구니에 없는 항목이에요: ${action.index}`);
+      return {
+        ...state,
+        cart: state.cart.map((item, index) =>
+          index === action.index ? { ...item, quantity: action.value } : item,
+        ),
+      };
     }
     case "addDraftToCart":
       return { ...state, cart: [...state.cart, completeDraft(requireDraft(state))], draft: null };
@@ -233,11 +274,7 @@ export function itemUnitPrice(item: CartItem | DraftItem): number {
       (item.drink ? getSetDrink(item.drink).extra : 0)
     );
   }
-  return (
-    getCafeMenu(item.menuId).price +
-    (item.size === "large" ? LARGE_EXTRA_PRICE : 0) +
-    paidOptionsPrice(item.paidOptions)
-  );
+  return getCafeMenu(item.menuId).price + item.sizeExtra + paidOptionsPrice(item.paidOptions);
 }
 
 export function itemPrice(item: CartItem | DraftItem): number {
@@ -311,4 +348,11 @@ export function setContents(
 ): string | null {
   if (!item.set || !item.side || !item.drink) return null;
   return [getSide(item.side).name, getSetDrink(item.drink).name].join(separator);
+}
+
+/** 고른 무료 옵션 중 기본값이 아닌 것의 짧은 설명. 예: ["얼음 적게", "빨대 없음"] */
+export function freeOptionSummaries(values: FreeOptionValues): string[] {
+  return (Object.entries(values) as [FreeOptionKey, string][])
+    .map(([key, id]) => getFreeOptionChoice(key, id).summary)
+    .filter((summary): summary is string => Boolean(summary));
 }

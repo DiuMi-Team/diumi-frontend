@@ -21,8 +21,10 @@
         "menuId": "latte",
         "temperature": "hot",
         "size": "regular",
+        "sizeExtra": 0,
         "quantity": 1,
-        "paidOptions": {}
+        "paidOptions": {},
+        "freeOptions": {}
       }
     ]
   },

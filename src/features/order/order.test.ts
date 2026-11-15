@@ -4,8 +4,10 @@ import {
   cartTotal,
   EMPTY_ORDER,
   formatWon,
+  freeOptionSummaries,
   itemDetail,
   itemName,
+  itemPrice,
   itemUnit,
   orderReducer,
   paidOptionsSummary,
@@ -34,8 +36,10 @@ describe("주문 상태", () => {
       menuId: "americano",
       temperature: null,
       size: "regular",
+      sizeExtra: 0,
       quantity: 1,
       paidOptions: {},
+      freeOptions: {},
     });
     expect(state.cart).toEqual([]);
   });
@@ -151,8 +155,10 @@ describe("주문 상태", () => {
           menuId: "americano" as const,
           temperature: "hot" as const,
           size: "regular" as const,
+          sizeExtra: 0,
           quantity: 1,
           paidOptions: {},
+          freeOptions: {},
         },
       ],
       couponId: "drink1000" as const,
@@ -236,6 +242,55 @@ describe("주문 상태", () => {
         { type: "chooseSet", set: true },
       ]),
     ).toThrow();
+  });
+
+  it("실전 키오스크는 Large가 기본이고 Extra는 700원 비싸다", () => {
+    const real = { ...EMPTY_ORDER, sizeMenu: "real" as const };
+    const picked = [
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setTemperature", value: "ice" },
+    ] satisfies OrderAction[];
+    const large = picked.reduce(orderReducer, real);
+    expect(large.draft).toMatchObject({ size: "large", sizeExtra: 0 });
+
+    const extra = [...picked, { type: "setSize", value: "extra" } as const].reduce(
+      orderReducer,
+      real,
+    );
+    expect(itemPrice(extra.draft!)).toBe(3200 + 700);
+    expect(() => orderReducer(large, { type: "setSize", value: "regular" })).toThrow();
+  });
+
+  it("무료 옵션은 고른 것만 기록하고, 기본값이 아닌 것만 요약한다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setFreeOption", key: "ice", value: "less" },
+      { type: "setFreeOption", key: "strength", value: "normal" },
+      { type: "setFreeOption", key: "straw", value: "none" },
+    ]);
+    const draft = state.draft!;
+    expect(draft.type === "drink" && draft.freeOptions).toEqual({
+      ice: "less",
+      strength: "normal",
+      straw: "none",
+    });
+    expect(freeOptionSummaries(draft.type === "drink" ? draft.freeOptions : {})).toEqual([
+      "얼음 적게",
+      "빨대 없음",
+    ]);
+    expect(() => orderReducer(state, { type: "setFreeOption", key: "ice", value: "x" })).toThrow();
+  });
+
+  it("장바구니에서 수량을 바꿀 수 있고, 1 미만으로는 줄지 않는다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setTemperature", value: "ice" },
+      { type: "addDraftToCart" },
+      { type: "setCartQuantity", index: 0, value: 2 },
+    ]);
+    expect(cartTotal(state.cart)).toBe(6400);
+    expect(() => orderReducer(state, { type: "setCartQuantity", index: 0, value: 0 })).toThrow();
+    expect(() => orderReducer(state, { type: "setCartQuantity", index: 3, value: 1 })).toThrow();
   });
 
   it("금액은 천 단위 쉼표와 원을 붙인다", () => {

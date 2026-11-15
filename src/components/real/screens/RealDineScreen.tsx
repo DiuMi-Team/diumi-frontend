@@ -10,8 +10,8 @@ const OPTION_CLASS =
 
 /** 매장·포장 선택 (RCM01) */
 export function RealDineScreen() {
-  const { mission, act, go } = useReal();
-  const { title, sub } = KIOSK_COPY[mission.service].dine;
+  const { setup, act, go } = useReal();
+  const { title, sub } = KIOSK_COPY[setup.service].dine;
 
   const choose = (value: DineOption) => {
     act({ type: "setDineOption", value }, `dine:${value}`);

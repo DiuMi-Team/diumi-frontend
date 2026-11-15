@@ -12,9 +12,9 @@ import { realDrinkName } from "@/features/real/labels";
 
 /** 메뉴판 (RCM02, RCM06). 장바구니가 차 있으면 "메뉴를 더 담아 보세요"와 결제하기 */
 export function RealMenuScreen() {
-  const { mission, order, act, go } = useReal();
+  const { setup, order, act, go } = useReal();
   const [hint, setHint] = useState(false);
-  const copy = KIOSK_COPY[mission.service];
+  const copy = KIOSK_COPY[setup.service];
   const isEmpty = order.cart.length === 0;
 
   return (

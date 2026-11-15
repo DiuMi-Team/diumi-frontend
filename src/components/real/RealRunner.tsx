@@ -7,7 +7,7 @@ import { Dialog } from "@/components/common/Dialog";
 import { Header, HeaderChip } from "@/components/common/Header";
 import { NavBar } from "@/components/common/NavBar";
 import { MissionProgress } from "@/components/common/Progress";
-import { MissionChip } from "@/components/common/StatusChip";
+import { FreeBadge, MissionChip } from "@/components/common/StatusChip";
 import { VoiceAssistantSheet } from "@/components/common/VoiceAssistantSheet";
 import { VoiceButton } from "@/components/common/VoiceButton";
 import { HomeFilledIcon } from "@/components/icons/ui-icons";
@@ -28,6 +28,7 @@ import {
 } from "@/components/real/screens/RealPayScreens";
 import { RealDoneScreen } from "@/components/real/screens/RealDoneScreen";
 import { RealPaymentMethodScreen } from "@/components/real/screens/RealPaymentMethodScreen";
+import { RealFreeResultScreen } from "@/components/real/screens/RealFreeResultScreen";
 import { RealResultScreen } from "@/components/real/screens/RealResultScreen";
 import { endSession, logEvents, startSession, type SessionEvent } from "@/features/api/session";
 import {
@@ -38,7 +39,7 @@ import {
 } from "@/features/order/order";
 import { FINISHED_SCREENS, realProgress, type RealScreen } from "@/features/real/flow";
 import { judgeMission } from "@/features/real/judge";
-import type { RealMission } from "@/features/real/missions";
+import type { RealSetup } from "@/features/real/missions";
 import { VOICE_SAMPLES } from "@/features/real/voice";
 
 const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
@@ -69,12 +70,25 @@ const SCREEN_GAP: Partial<Record<RealScreen, string>> = {
 
 const NEW_ORDER: OrderState = { ...EMPTY_ORDER, sizeMenu: "real" };
 
-type SessionRef = { id: string | null; startedAt: number; buffer: SessionEvent[] };
+type SessionRef = {
+  id: string | null;
+  started: boolean;
+  startedAt: number;
+  buffer: SessionEvent[];
+};
 
-/** 실전모드 미션 수행. 강조·정답 없이 스스로 주문한다 (RCM00~) */
-export function RealRunner({ mission }: { mission: RealMission }) {
+const NEW_SESSION = (): SessionRef => ({ id: null, started: false, startedAt: 0, buffer: [] });
+
+/**
+ * 실전모드. 강조·정답 없이 스스로 주문한다.
+ * - 미션 수행 (RCM00~14): 미션 확인 → 주문 → 결제 → 결제 완료 → 판정 결과
+ * - 자유 체험 (RCF01~13): 바로 주문 → 결제 → 체험 완료 (판정 없음)
+ */
+export function RealRunner({ setup }: { setup: RealSetup }) {
   const router = useRouter();
-  const [history, setHistory] = useState<RealScreen[]>(["intro"]);
+  const mission = setup.mission;
+  const firstScreen: RealScreen = mission ? "intro" : "dine";
+  const [history, setHistory] = useState<RealScreen[]>([firstScreen]);
   const [order, setOrder] = useState<OrderState>(NEW_ORDER);
   /** 음성 도우미를 연 횟수 */
   const [helpCount, setHelpCount] = useState(0);
@@ -83,7 +97,7 @@ export function RealRunner({ mission }: { mission: RealMission }) {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [quitOpen, setQuitOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const session = useRef<SessionRef>({ id: null, startedAt: 0, buffer: [] });
+  const session = useRef<SessionRef>(NEW_SESSION());
   const mainRef = useRef<HTMLElement>(null);
   const screen = history[history.length - 1];
 
@@ -109,19 +123,36 @@ export function RealRunner({ mission }: { mission: RealMission }) {
 
   const go = (next: RealScreen) => setHistory((items) => [...items, next]);
 
-  const start = () => {
-    session.current.startedAt = Date.now();
-    startSession({ mode: "mission", service: mission.service, missionId: mission.id })
+  /** 세션을 시작하고 시간을 재기 시작한다. 한 번만 시작한다 */
+  const beginSession = () => {
+    const current = session.current;
+    if (current.started) return;
+    current.started = true;
+    current.startedAt = Date.now();
+    startSession({
+      mode: mission ? "mission" : "free",
+      service: setup.service,
+      missionId: mission?.id,
+    })
       .then(({ sessionId }) => {
-        session.current.id = sessionId;
+        current.id = sessionId;
       })
       .catch(() => {});
+  };
+
+  /* 자유 체험은 미션 확인 없이 바로 시작한다 */
+  useEffect(() => {
+    if (!mission) beginSession();
+  });
+
+  const start = () => {
+    beginSession();
     go("dine");
   };
 
   const back = () => {
     if (history.length > 1) setHistory((items) => items.slice(0, -1));
-    else router.push(mission.typeHref);
+    else router.push(setup.typeHref);
   };
 
   const openVoice = () => {
@@ -130,7 +161,10 @@ export function RealRunner({ mission }: { mission: RealMission }) {
     setVoiceOpen(true);
   };
 
-  /** 결제를 마친다. 걸린 시간을 재고, 미션을 판정해 세션을 끝낸 뒤 결제 완료 화면으로 간다 */
+  /**
+   * 결제를 마친다. 걸린 시간을 재고 세션을 끝낸다.
+   * 미션 수행은 결제 완료 화면을 거쳐 판정 결과로, 자유 체험은 바로 체험 완료 화면으로 간다.
+   */
   const finishPayment = (target: string) => {
     record("tap", target);
     const paid = orderReducer(order, { type: "completePayment" });
@@ -140,21 +174,21 @@ export function RealRunner({ mission }: { mission: RealMission }) {
     const sessionId = session.current.id;
     if (sessionId) {
       endSession(sessionId, {
-        success: judgeMission(mission, paid).success,
+        success: mission ? judgeMission(mission, paid).success : null,
         elapsedMs: elapsed,
         helpCount,
       }).catch(() => {});
     }
-    go("done");
+    go(mission ? "done" : "result");
   };
 
-  /** 다시 도전하기: 처음 상태로 되돌린다 */
+  /** 다시 도전하기·한 번 더 체험: 처음 상태로 되돌린다 (자유 체험은 새 세션이 바로 시작된다) */
   const restart = () => {
-    session.current = { id: null, startedAt: 0, buffer: [] };
+    session.current = NEW_SESSION();
     setOrder(NEW_ORDER);
     setHelpCount(0);
     setElapsedMs(null);
-    setHistory(["intro"]);
+    setHistory([firstScreen]);
   };
 
   const act = (action: OrderAction, target: string) => {
@@ -163,16 +197,20 @@ export function RealRunner({ mission }: { mission: RealMission }) {
   };
 
   const finished = FINISHED_SCREENS.includes(screen);
-  const progress = screen === "intro" || screen === "result" ? null : realProgress(screen, order);
-  const Screen = screen === "intro" ? null : SCREENS[screen];
-  const serviceName = KIOSK_COPY[mission.service].serviceName;
+  const progress =
+    !mission || screen === "intro" || screen === "result" ? null : realProgress(screen, order);
+  const Screen =
+    screen === "intro"
+      ? null
+      : screen === "result" && !mission
+        ? RealFreeResultScreen
+        : SCREENS[screen];
+  const serviceName = KIOSK_COPY[setup.service].serviceName;
 
   return (
     <>
       <Header
-        right={
-          <HeaderChip compact={mission.service === "fastfood"}>실전 · {serviceName}</HeaderChip>
-        }
+        right={<HeaderChip compact={setup.service === "fastfood"}>실전 · {serviceName}</HeaderChip>}
       />
       {!finished && (
         <NavBar home={screen === "intro" ? "/" : () => setQuitOpen(true)} back={back} />
@@ -190,10 +228,10 @@ export function RealRunner({ mission }: { mission: RealMission }) {
         } ${SCREEN_GAP[screen] ?? "gap-3 short:gap-2"}`}
       >
         {progress && <MissionProgress step={progress.step} label={progress.label} />}
-        {screen === "dine" && <MissionChip>{mission.chip}</MissionChip>}
+        {screen === "dine" && (mission ? <MissionChip>{mission.chip}</MissionChip> : <FreeBadge />)}
         <RealProvider
           value={{
-            mission,
+            setup,
             order,
             act,
             go,
@@ -204,7 +242,7 @@ export function RealRunner({ mission }: { mission: RealMission }) {
             comingSoon: () => setComingSoonOpen(true),
           }}
         >
-          {Screen ? <Screen /> : <RealMissionIntro mission={mission} onStart={start} />}
+          {Screen ? <Screen /> : mission && <RealMissionIntro mission={mission} onStart={start} />}
         </RealProvider>
       </main>
       {!finished && (
@@ -222,7 +260,7 @@ export function RealRunner({ mission }: { mission: RealMission }) {
       <Dialog
         open={quitOpen}
         onClose={() => setQuitOpen(false)}
-        title="미션을 그만할까요?"
+        title={mission ? "미션을 그만할까요?" : "체험을 그만할까요?"}
         description="지금까지 담은 메뉴는 사라져요."
         icon={<HomeFilledIcon size={40} />}
       >

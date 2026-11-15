@@ -45,3 +45,32 @@ export const CAFE_REAL_MISSION: RealMission = {
   typeHref: "/cafe/real",
   orderNumber: "133",
 };
+
+/**
+ * 실전 진행 설정. mission이 있으면 미션 수행, 없으면 자유 체험이다.
+ * 자유 체험은 미션 확인·진행바·판정 없이 주문 과정과 도움 요청만 기록한다.
+ */
+export type RealSetup = {
+  service: PracticeService;
+  /** 실전 유형 선택 화면 (첫 화면의 이전으로) */
+  typeHref: string;
+  /** 결제 완료 화면의 번호 (mock) */
+  orderNumber: string;
+  mission: RealMission | null;
+};
+
+export function missionSetup(mission: RealMission): RealSetup {
+  return {
+    service: mission.service,
+    typeHref: mission.typeHref,
+    orderNumber: mission.orderNumber,
+    mission,
+  };
+}
+
+export const CAFE_REAL_FREE: RealSetup = {
+  service: "cafe",
+  typeHref: "/cafe/real",
+  orderNumber: "133",
+  mission: null,
+};

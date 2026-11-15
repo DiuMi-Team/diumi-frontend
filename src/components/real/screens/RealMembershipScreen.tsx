@@ -9,9 +9,9 @@ import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
 const TILE_CLASS =
   "flex h-40 flex-col items-center justify-center gap-2.5 rounded-3xl bg-gray-1 text-19 font-bold short:h-[120px] short:gap-1.5 short:[&>svg]:size-12";
 
-/** 멤버십·쿠폰 (RCM08). 결제 단계는 다음 이슈에서 만든다 */
+/** 멤버십·쿠폰 (RCM08). 적립·쿠폰은 아직 준비 중이고, 다음으로 결제 방식 선택으로 간다 */
 export function RealMembershipScreen() {
-  const { comingSoon } = useReal();
+  const { comingSoon, go } = useReal();
 
   return (
     <>
@@ -28,7 +28,7 @@ export function RealMembershipScreen() {
       </div>
       <button
         type="button"
-        onClick={comingSoon}
+        onClick={() => go("paymentMethod")}
         className="flex h-[72px] items-center justify-between rounded-3xl bg-gray-1 px-5 text-19 font-bold short:h-14"
       >
         적립·쿠폰 없이 진행
@@ -40,7 +40,7 @@ export function RealMembershipScreen() {
         휴대전화 번호 입력 또는 바코드 인식으로 적립할 수 있어요.
       </p>
       <Spacer />
-      <button type="button" onClick={comingSoon} className={REAL_PRIMARY_CLASS}>
+      <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
         다음
         <ChevronRightIcon size={20} />
       </button>

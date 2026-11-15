@@ -21,14 +21,23 @@ import { RealMembershipScreen } from "@/components/real/screens/RealMembershipSc
 import { RealMenuScreen } from "@/components/real/screens/RealMenuScreen";
 import { RealOptionsScreen } from "@/components/real/screens/RealOptionsScreen";
 import { RealPaidOptionsScreen } from "@/components/real/screens/RealPaidOptionsScreen";
-import { logEvents, startSession, type SessionEvent } from "@/features/api/session";
+import {
+  RealPayCardScreen,
+  RealPayGiftCardScreen,
+  RealPayMobileScreen,
+} from "@/components/real/screens/RealPayScreens";
+import { RealDoneScreen } from "@/components/real/screens/RealDoneScreen";
+import { RealPaymentMethodScreen } from "@/components/real/screens/RealPaymentMethodScreen";
+import { RealResultScreen } from "@/components/real/screens/RealResultScreen";
+import { endSession, logEvents, startSession, type SessionEvent } from "@/features/api/session";
 import {
   EMPTY_ORDER,
   orderReducer,
   type OrderAction,
   type OrderState,
 } from "@/features/order/order";
-import { realProgress, type RealScreen } from "@/features/real/flow";
+import { FINISHED_SCREENS, realProgress, type RealScreen } from "@/features/real/flow";
+import { judgeMission } from "@/features/real/judge";
 import type { RealMission } from "@/features/real/missions";
 import { VOICE_SAMPLES } from "@/features/real/voice";
 
@@ -40,6 +49,12 @@ const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
   freeOptions: RealFreeOptionsScreen,
   cart: RealCartScreen,
   membership: RealMembershipScreen,
+  paymentMethod: RealPaymentMethodScreen,
+  payMobile: RealPayMobileScreen,
+  payGiftCard: RealPayGiftCardScreen,
+  payCard: RealPayCardScreen,
+  done: RealDoneScreen,
+  result: RealResultScreen,
 };
 
 /** 화면마다 본문 간격. 칸이 많은 화면은 10px, 나머지는 12px */
@@ -48,7 +63,11 @@ const SCREEN_GAP: Partial<Record<RealScreen, string>> = {
   options: "gap-2.5 short:gap-1.5",
   paidOptions: "gap-2.5 short:gap-1.5",
   freeOptions: "gap-2.5 short:gap-1.5",
+  done: "gap-3.5 short:gap-2.5",
+  result: "gap-3.5 short:gap-2.5",
 };
+
+const NEW_ORDER: OrderState = { ...EMPTY_ORDER, sizeMenu: "real" };
 
 type SessionRef = { id: string | null; startedAt: number; buffer: SessionEvent[] };
 
@@ -56,7 +75,11 @@ type SessionRef = { id: string | null; startedAt: number; buffer: SessionEvent[]
 export function RealRunner({ mission }: { mission: RealMission }) {
   const router = useRouter();
   const [history, setHistory] = useState<RealScreen[]>(["intro"]);
-  const [order, setOrder] = useState<OrderState>({ ...EMPTY_ORDER, sizeMenu: "real" });
+  const [order, setOrder] = useState<OrderState>(NEW_ORDER);
+  /** 음성 도우미를 연 횟수 */
+  const [helpCount, setHelpCount] = useState(0);
+  /** 미션 시작부터 결제를 마칠 때까지 걸린 시간. 결제 전에는 null */
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [quitOpen, setQuitOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
@@ -103,7 +126,35 @@ export function RealRunner({ mission }: { mission: RealMission }) {
 
   const openVoice = () => {
     record("help_open");
+    setHelpCount((count) => count + 1);
     setVoiceOpen(true);
+  };
+
+  /** 결제를 마친다. 걸린 시간을 재고, 미션을 판정해 세션을 끝낸 뒤 결제 완료 화면으로 간다 */
+  const finishPayment = (target: string) => {
+    record("tap", target);
+    const paid = orderReducer(order, { type: "completePayment" });
+    const elapsed = Date.now() - session.current.startedAt;
+    setOrder(paid);
+    setElapsedMs(elapsed);
+    const sessionId = session.current.id;
+    if (sessionId) {
+      endSession(sessionId, {
+        success: judgeMission(mission, paid).success,
+        elapsedMs: elapsed,
+        helpCount,
+      }).catch(() => {});
+    }
+    go("done");
+  };
+
+  /** 다시 도전하기: 처음 상태로 되돌린다 */
+  const restart = () => {
+    session.current = { id: null, startedAt: 0, buffer: [] };
+    setOrder(NEW_ORDER);
+    setHelpCount(0);
+    setElapsedMs(null);
+    setHistory(["intro"]);
   };
 
   const act = (action: OrderAction, target: string) => {
@@ -111,7 +162,8 @@ export function RealRunner({ mission }: { mission: RealMission }) {
     setOrder((current) => orderReducer(current, action));
   };
 
-  const progress = screen === "intro" ? null : realProgress(screen, order);
+  const finished = FINISHED_SCREENS.includes(screen);
+  const progress = screen === "intro" || screen === "result" ? null : realProgress(screen, order);
   const Screen = screen === "intro" ? null : SCREENS[screen];
   const serviceName = KIOSK_COPY[mission.service].serviceName;
 
@@ -122,24 +174,44 @@ export function RealRunner({ mission }: { mission: RealMission }) {
           <HeaderChip compact={mission.service === "fastfood"}>실전 · {serviceName}</HeaderChip>
         }
       />
-      <NavBar home={screen === "intro" ? "/" : () => setQuitOpen(true)} back={back} />
+      {!finished && (
+        <NavBar home={screen === "intro" ? "/" : () => setQuitOpen(true)} back={back} />
+      )}
       <main
         ref={mainRef}
         className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-5 *:shrink-0 short:pt-2 ${
-          screen === "intro" ? "gap-3 pt-[18px] pb-3 short:gap-2" : "pt-3.5 pb-3"
+          screen === "intro"
+            ? "gap-3 pt-[18px] pb-3 short:gap-2"
+            : screen === "result"
+              ? "pt-6 pb-5 short:pt-4 short:pb-4"
+              : finished
+                ? "pt-3.5 pb-5 short:pb-4"
+                : "pt-3.5 pb-3"
         } ${SCREEN_GAP[screen] ?? "gap-3 short:gap-2"}`}
       >
         {progress && <MissionProgress step={progress.step} label={progress.label} />}
         {screen === "dine" && <MissionChip>{mission.chip}</MissionChip>}
         <RealProvider
-          value={{ mission, order, act, go, back, comingSoon: () => setComingSoonOpen(true) }}
+          value={{
+            mission,
+            order,
+            act,
+            go,
+            back,
+            finishPayment,
+            restart,
+            stats: { elapsedMs: elapsedMs ?? 0, helpCount },
+            comingSoon: () => setComingSoonOpen(true),
+          }}
         >
           {Screen ? <Screen /> : <RealMissionIntro mission={mission} onStart={start} />}
         </RealProvider>
       </main>
-      <div className="flex-none px-5 pb-4 short:pb-2.5">
-        <VoiceButton onClick={openVoice} />
-      </div>
+      {!finished && (
+        <div className="flex-none px-5 pb-4 short:pb-2.5">
+          <VoiceButton onClick={openVoice} />
+        </div>
+      )}
 
       <VoiceAssistantSheet
         open={voiceOpen}

@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { endSession, getMockSession, logEvents, startSession } from "@/features/api/session";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
-import { realDrinkDetail, realDrinkName } from "@/features/real/labels";
+import { judgeMission } from "@/features/real/judge";
+import {
+  formatDuration,
+  realDrinkDetail,
+  realDrinkName,
+  realOrderSummary,
+} from "@/features/real/labels";
 import { CAFE_REAL_MISSION } from "@/features/real/missions";
 
 const REAL = { ...EMPTY_ORDER, sizeMenu: "real" as const };
@@ -83,5 +89,96 @@ describe("체험 세션 mock API", () => {
     const first = await startSession({ mode: "free", service: "cafe" });
     const second = await startSession({ mode: "free", service: "cafe" });
     expect(first.sessionId).not.toBe(second.sessionId);
+  });
+});
+
+describe("미션 판정", () => {
+  const base: OrderAction[] = [
+    { type: "setDineOption", value: "takeout" },
+    { type: "selectMenu", menuId: "americano" },
+    { type: "setTemperature", value: "ice" },
+    { type: "setQuantity", value: 2 },
+    { type: "addDraftToCart" },
+    { type: "selectPayment", value: "card" },
+    { type: "completePayment" },
+  ];
+
+  it("미션대로 주문하면 성공, 100%다", () => {
+    const result = judgeMission(CAFE_REAL_MISSION, order(base));
+    expect(result).toMatchObject({ success: true, percent: 100 });
+    expect(result.conditions.every((condition) => condition.ok)).toBe(true);
+  });
+
+  it("사이즈만 다르면 75%이고 다른 점을 알려 준다", () => {
+    const result = judgeMission(
+      CAFE_REAL_MISSION,
+      order([...base.slice(0, 3), { type: "setSize", value: "extra" }, ...base.slice(3)]),
+    );
+    expect(result).toMatchObject({ success: false, percent: 75 });
+    expect(result.conditions[1]).toEqual({
+      label: "Large 사이즈 · 수량 2잔",
+      ok: false,
+      differences: ["사이즈: Extra를 골랐어요 → 미션은 Large"],
+    });
+  });
+
+  it("온도·수량·이용 방법·결제 방법이 다르면 각각 알려 준다", () => {
+    const result = judgeMission(
+      CAFE_REAL_MISSION,
+      order([
+        { type: "setDineOption", value: "dineIn" },
+        { type: "selectMenu", menuId: "americano" },
+        { type: "setTemperature", value: "hot" },
+        { type: "addDraftToCart" },
+        { type: "selectPayment", value: "mobilePay" },
+        { type: "completePayment" },
+      ]),
+    );
+    expect(result.percent).toBe(0);
+    expect(result.conditions.flatMap((condition) => condition.differences)).toEqual([
+      "온도: HOT을 골랐어요 → 미션은 ICE",
+      "수량: 1잔 → 미션은 2잔",
+      "이용 방법: 매장을 골랐어요 → 미션은 포장",
+      "결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드",
+    ]);
+  });
+
+  it("미션에 없는 메뉴를 더 담으면 메뉴 조건이 틀린다", () => {
+    const result = judgeMission(
+      CAFE_REAL_MISSION,
+      order([
+        ...base.slice(0, 5),
+        { type: "selectMenu", menuId: "latte" },
+        { type: "setTemperature", value: "hot" },
+        { type: "addDraftToCart" },
+        ...base.slice(5),
+      ]),
+    );
+    expect(result.conditions[0].ok).toBe(false);
+    expect(result.conditions[0].differences).toEqual([
+      "미션에 없는 메뉴도 담았어요: 따뜻한 카페라떼 Large 1잔",
+    ]);
+  });
+
+  it("아메리카노를 담지 않으면 메뉴가 없다고 알려 준다", () => {
+    const result = judgeMission(
+      CAFE_REAL_MISSION,
+      order([
+        { type: "setDineOption", value: "takeout" },
+        { type: "selectMenu", menuId: "mocha" },
+        { type: "setTemperature", value: "ice" },
+        { type: "addDraftToCart" },
+      ]),
+    );
+    expect(result.conditions[0].differences[0]).toBe("메뉴: 아메리카노가 담기지 않았어요");
+    expect(result.conditions[3].differences[0]).toBe(
+      "결제를 마치지 않았어요 → 미션은 신용·체크카드",
+    );
+  });
+
+  it("결과 화면 문구: 완료한 주문과 소요 시간", () => {
+    expect(realOrderSummary(order(base))).toBe("아이스 아메리카노 Large 2잔 · 포장 · 카드 결제");
+    expect(formatDuration(161_000)).toBe("2분 41초");
+    expect(formatDuration(9_400)).toBe("9초");
   });
 });

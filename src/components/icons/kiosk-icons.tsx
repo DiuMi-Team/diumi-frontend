@@ -490,3 +490,19 @@ export function SetDrinkIcon({ drinkId, size }: IconProps & { drinkId: SetDrinkI
     </svg>
   );
 }
+
+/** 얼음 든 커피 잔. 미션 카드는 흰 잔, 장바구니는 민트 잔 */
+export function IcedCoffeeIcon({ size, tone = "white" }: IconProps & { tone?: "white" | "mint" }) {
+  const glass = tone === "white" ? "#FDFDFD" : "#B9E6E8";
+  const ice = tone === "white" ? "#B9E6E8" : "#FDFDFD";
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="flex-none">
+      <ellipse cx="32" cy="59" rx="15" ry="3" {...SHADOW} />
+      <path d="M38 3l-4 20" stroke="#F5A65B" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M17 14h30l-4 39a4 4 0 0 1-4 3H25a4 4 0 0 1-4-3z" fill={glass} />
+      <path d="M19 28h26l-2.6 25a3 3 0 0 1-3 3H24.6a3 3 0 0 1-3-3z" fill="#3D3531" />
+      <rect x="24" y="22" width="9" height="9" rx="2" fill={ice} />
+      <rect x="34" y="27" width="8" height="8" rx="2" fill={ice} />
+    </svg>
+  );
+}

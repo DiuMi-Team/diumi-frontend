@@ -6,8 +6,9 @@ import { KioskButton, usePractice } from "@/components/practice/PracticeContext"
 import { groupDim, KIOSK_PRIMARY_CLASS, Spacer } from "@/components/practice/kiosk/parts";
 import {
   getCafeMenu,
-  LARGE_EXTRA_PRICE,
-  type CupSize,
+  SIZE_LABEL,
+  SIZE_MENUS,
+  type SizeOption,
   type Temperature,
 } from "@/features/cafe/catalog";
 import { formatWon, itemPrice, paidOptionsSummary } from "@/features/order/order";
@@ -68,8 +69,13 @@ export function OptionsScreen() {
       </OptionGroup>
 
       <OptionGroup label="사이즈">
-        {(["regular", "large"] as const).map((value) => (
-          <SizeTile key={value} value={value} selected={draft.size === value} />
+        {SIZE_MENUS[order.sizeMenu].map((option, index) => (
+          <SizeTile
+            key={option.id}
+            option={option}
+            isDefault={index === 0}
+            selected={draft.size === option.id}
+          />
         ))}
       </OptionGroup>
 
@@ -147,17 +153,21 @@ function TemperatureTile({ value, selected }: { value: Temperature; selected: bo
   );
 }
 
-const SIZE = {
-  regular: { name: "Regular", note: "기본" },
-  large: { name: "Large", note: `+${formatWon(LARGE_EXTRA_PRICE)}` },
-} satisfies Record<CupSize, { name: string; note: string }>;
-
-function SizeTile({ value, selected }: { value: CupSize; selected: boolean }) {
-  const { name, note } = SIZE[value];
+function SizeTile({
+  option,
+  isDefault,
+  selected,
+}: {
+  option: SizeOption;
+  isDefault: boolean;
+  selected: boolean;
+}) {
+  const name = SIZE_LABEL[option.id];
+  const note = isDefault ? "기본" : `+${formatWon(option.extra)}`;
 
   return (
     <KioskButton
-      id={`size:${value}`}
+      id={`size:${option.id}`}
       tight
       pressed={selected}
       inactiveClassName={selected ? "opacity-90" : undefined}

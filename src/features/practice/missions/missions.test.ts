@@ -83,8 +83,10 @@ describe("카페 기본 미션", () => {
         menuId: "americano",
         temperature: "hot",
         size: "regular",
+        sizeExtra: 0,
         quantity: 1,
         paidOptions: {},
+        freeOptions: {},
       },
     ]);
     expect(cartTotal(final.cart)).toBe(3200);

@@ -6,6 +6,7 @@ const ROUTES = [
   "/cafe",
   "/fastfood",
   "/cafe/real",
+  "/cafe/real/mission",
   "/fastfood/real",
   "/cafe/practice",
   "/cafe/practice/basic",

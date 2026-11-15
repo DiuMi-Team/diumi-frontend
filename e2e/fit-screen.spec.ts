@@ -139,3 +139,34 @@ test("버튼을 누르는 동안 살짝 작아지고, 기본 회색 터치 표�
   );
   expect(highlight).toBe("rgba(0, 0, 0, 0)");
 });
+
+test("실전 미션은 휴대폰에서 화면마다 다음으로 가는 버튼이 늘 보인다", async ({ page }) => {
+  const expectInView = async (name: string | RegExp) => {
+    const box = (await page
+      .getByRole("button", { name, exact: typeof name === "string" })
+      .boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(PHONE.height);
+  };
+
+  await page.goto("/cafe/real/mission");
+  await expectInView("미션 시작하기");
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
+  await page.getByRole("button", { name: "포장해서 갈래요" }).click();
+  await expectInView("선택한 메뉴 보기");
+  await page.getByRole("button", { name: "아메리카노 3,200원" }).click();
+  await expectInView("선택 완료");
+  await page.getByRole("button", { name: /유료 옵션/ }).click();
+  await expectInView("유료 옵션 선택 완료");
+  await page.getByRole("button", { name: "유료 옵션 선택 완료" }).click();
+  await page.getByRole("button", { name: /무료 옵션/ }).click();
+  await expectInView("무료 옵션 선택 완료");
+  await page.getByRole("button", { name: "무료 옵션 선택 완료" }).click();
+  await page.getByRole("button", { name: "ICE" }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+  await expectInView("결제하기");
+  await page.getByRole("button", { name: "결제하기" }).click();
+  await expectInView("다음");
+  await page.getByRole("button", { name: "다음" }).click();
+  await expectInView("다음");
+});

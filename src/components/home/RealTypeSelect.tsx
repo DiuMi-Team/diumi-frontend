@@ -8,9 +8,11 @@ type RealTypeSelectProps = {
   /** 칩 문구가 길면 작은 칩을 쓴다 */
   compactChip?: boolean;
   backHref: string;
+  /** 없으면 아직 화면이 없다는 뜻이라 준비 중 안내를 띄운다 */
+  missionHref?: string;
 };
 
-export function RealTypeSelect({ chip, compactChip, backHref }: RealTypeSelectProps) {
+export function RealTypeSelect({ chip, compactChip, backHref, missionHref }: RealTypeSelectProps) {
   const illustrationClass = "absolute right-3.5 bottom-2";
 
   return (
@@ -29,6 +31,7 @@ export function RealTypeSelect({ chip, compactChip, backHref }: RealTypeSelectPr
           actionLabel="선택하기"
           tone="primary"
           size="type"
+          href={missionHref}
           illustration={<FlagIllustration size={104} className={illustrationClass} />}
         />
         <ChoiceCard

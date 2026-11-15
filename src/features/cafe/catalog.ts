@@ -55,28 +55,3 @@ export function getPaidOption(id: PaidOptionId): PaidOption {
   if (!option) throw new Error(`없는 유료 옵션이에요: ${id}`);
   return option;
 }
-
-export type CouponId = "drink1000";
-
-export type Coupon = {
-  id: CouponId;
-  name: string;
-  description: string;
-  discount: number;
-};
-
-/** 휴대폰 바코드로 쓰는 할인 쿠폰 */
-export const CAFE_COUPONS: readonly Coupon[] = [
-  {
-    id: "drink1000",
-    name: "1,000원 할인 쿠폰",
-    description: "모든 음료에 쓸 수 있어요",
-    discount: 1000,
-  },
-];
-
-export function getCoupon(id: CouponId): Coupon {
-  const coupon = CAFE_COUPONS.find((item) => item.id === id);
-  if (!coupon) throw new Error(`없는 쿠폰이에요: ${id}`);
-  return coupon;
-}

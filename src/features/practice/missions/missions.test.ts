@@ -12,6 +12,7 @@ import {
   cafeCoupon,
   cafeOptions,
   fastfoodBasic,
+  fastfoodCoupon,
   fastfoodSet,
   PRACTICE_MISSIONS,
 } from "@/features/practice/missions";
@@ -170,6 +171,31 @@ describe("패스트푸드 세트+단품 미션", () => {
   it("디자인의 PB02~PB16 화면을 순서대로 거친다", () => {
     expect(fastfoodSet.steps.map((step) => step.id)).toEqual(
       Array.from({ length: 15 }, (_, i) => `PB${String(i + 2).padStart(2, "0")}`),
+    );
+  });
+});
+
+describe("패스트푸드 쿠폰 미션", () => {
+  it("불고기버거 세트(감자튀김·제로콜라) 1개가 담긴 상태에서 시작한다", () => {
+    const start = orderAt(fastfoodCoupon, { kind: "intro" });
+    expect(start.dineOption).toBe("dineIn");
+    expect(start.cart.map((item) => [item.menuId, itemDetail(item), item.quantity])).toEqual([
+      ["bulgogi", "감자튀김 · 제로콜라", 1],
+    ]);
+    expect(start.couponId).toBeNull();
+  });
+
+  it("2,000원 쿠폰을 써서 7,200원 중 5,200원을 카드로 결제한다", () => {
+    const final = orderAt(fastfoodCoupon, { kind: "complete" });
+    expect(final.couponId).toBe("set2000");
+    expect(cartTotal(final.cart)).toBe(7200);
+    expect(payableTotal(final)).toBe(5200);
+    expect(final.paymentMethod).toBe("card");
+  });
+
+  it("디자인의 PF02~PF08 화면을 순서대로 거친다", () => {
+    expect(fastfoodCoupon.steps.map((step) => step.id)).toEqual(
+      Array.from({ length: 7 }, (_, i) => `PF${String(i + 2).padStart(2, "0")}`),
     );
   });
 });

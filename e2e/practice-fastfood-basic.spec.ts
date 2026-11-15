@@ -47,17 +47,6 @@ test("모드 선택에서 연습모드 → 미션 선택 → 패스트푸드 기
   await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
 });
 
-test("아직 만들지 않은 패스트푸드 미션은 준비 중 안내를 띄운다", async ({ page }) => {
-  await page.goto("/fastfood/practice");
-  for (const name of [/쿠폰 쓰고 결제하기/]) {
-    await page.getByRole("button", { name }).click();
-    const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
-    await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "확인" }).click();
-    await expect(dialog).toBeHidden();
-  }
-});
-
 test("안내를 따라 불고기버거 단품 1개를 매장 식사로 4,800원 결제한다", async ({ page }) => {
   await startBasic(page);
   await expect(page.getByRole("heading", { name: "어디에서 드시나요?" })).toBeVisible();

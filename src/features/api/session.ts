@@ -24,7 +24,8 @@ export type SessionEvent = {
 };
 
 export type SessionSummary = {
-  success: boolean;
+  /** 미션 성공 여부. 자유 체험은 성공·실패가 없어 null */
+  success: boolean | null;
   elapsedMs: number;
   helpCount: number;
 };

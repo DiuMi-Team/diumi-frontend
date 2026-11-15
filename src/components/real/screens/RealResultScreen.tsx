@@ -17,7 +17,9 @@ import { formatDuration, realOrderSummary } from "@/features/real/labels";
  * 실패 화면은 디자인에 없어 성공 화면과 같은 틀에 주황색으로 만들었다 (빨강은 연습 예외 안내에만 쓴다).
  */
 export function RealResultScreen() {
-  const { mission, order, stats, restart } = useReal();
+  const { setup, order, stats, restart } = useReal();
+  const mission = setup.mission;
+  if (!mission) throw new Error("미션 결과 화면은 미션 수행에서만 보여 줘요");
   const judgement = judgeMission(mission, order);
   const { success, percent } = judgement;
   const differences = judgement.conditions.flatMap((condition) => condition.differences);
@@ -103,7 +105,7 @@ export function RealResultScreen() {
         <b className="text-18">완료한 주문</b>
         <p className="text-17 leading-[1.45]">{realOrderSummary(order)}</p>
         <b className="text-17 text-primary">
-          {KIOSK_COPY[mission.service].numberLabel} {mission.orderNumber}
+          {KIOSK_COPY[setup.service].numberLabel} {setup.orderNumber}
         </b>
       </section>
 

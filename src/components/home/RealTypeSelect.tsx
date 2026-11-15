@@ -10,9 +10,16 @@ type RealTypeSelectProps = {
   backHref: string;
   /** 없으면 아직 화면이 없다는 뜻이라 준비 중 안내를 띄운다 */
   missionHref?: string;
+  freeHref?: string;
 };
 
-export function RealTypeSelect({ chip, compactChip, backHref, missionHref }: RealTypeSelectProps) {
+export function RealTypeSelect({
+  chip,
+  compactChip,
+  backHref,
+  missionHref,
+  freeHref,
+}: RealTypeSelectProps) {
   const illustrationClass = "absolute right-3.5 bottom-2";
 
   return (
@@ -40,6 +47,7 @@ export function RealTypeSelect({ chip, compactChip, backHref, missionHref }: Rea
           actionLabel="선택하기"
           tone="mint"
           size="type"
+          href={freeHref}
           illustration={<StarIllustration size={104} className={illustrationClass} />}
         />
       </main>

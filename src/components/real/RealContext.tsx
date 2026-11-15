@@ -3,10 +3,11 @@
 import { createContext, use, type ReactNode } from "react";
 import type { OrderAction, OrderState } from "@/features/order/order";
 import type { RealScreen } from "@/features/real/flow";
-import type { RealMission } from "@/features/real/missions";
+import type { RealSetup } from "@/features/real/missions";
 
 type RealContextValue = {
-  mission: RealMission;
+  /** 미션 수행이면 setup.mission이 있고, 자유 체험이면 null이다 */
+  setup: RealSetup;
   order: OrderState;
   /** 주문 상태를 바꾸고 행동 기록에 남긴다 */
   act: (action: OrderAction, target: string) => void;

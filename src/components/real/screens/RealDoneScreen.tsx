@@ -8,7 +8,7 @@ import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
 
 /** 결제 완료·대기번호 (RCM13). 결제를 마쳐서 되돌아갈 수 없다 */
 export function RealDoneScreen() {
-  const { mission, go } = useReal();
+  const { setup, go } = useReal();
 
   return (
     <>
@@ -21,9 +21,9 @@ export function RealDoneScreen() {
       </div>
       <div className="flex flex-col items-center rounded-[28px] bg-gray-1 py-6 short:py-3">
         <span className="text-17 font-bold text-text-sub">
-          {KIOSK_COPY[mission.service].numberLabel}
+          {KIOSK_COPY[setup.service].numberLabel}
         </span>
-        <b className="text-72 leading-[1.1] short:text-56">{mission.orderNumber}</b>
+        <b className="text-72 leading-[1.1] short:text-56">{setup.orderNumber}</b>
       </div>
       <div className="flex items-center justify-center gap-2 rounded-[22px] bg-gray-2 py-4 text-17 font-bold short:py-3">
         <ReceiptIcon size={24} />

@@ -1,0 +1,210 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const main = (page: Page) => page.locator("main");
+
+async function startMission(page: Page) {
+  await page.goto("/fastfood/real/mission");
+  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
+  await expect(page.getByText("1 / 9")).toBeVisible();
+}
+
+/** 매장 → 불고기버거 → 세트 → 사이드·음료 → 장바구니 담기까지 해서 메뉴 화면으로 돌아온다 */
+async function addBulgogiSet(page: Page, side = "감자튀김 기본", drink = "콜라 기본") {
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+  await page.getByRole("button", { name: /^세트/ }).click();
+  await page.getByRole("button", { name: side }).click();
+  await page.getByRole("button", { name: drink }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+  await page.getByRole("button", { name: "장바구니 담기" }).click();
+}
+
+async function payWith(page: Page, method: string) {
+  await page.getByRole("button", { name: "주문 내역 확인 후 결제하기" }).click();
+  await page.getByRole("button", { name: "주문 확인" }).click();
+  await expect(page.getByText("8 / 9")).toBeVisible();
+  await page.getByRole("button", { name: method }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+}
+
+test("실전 유형 선택에서 미션 수행하기로 들어간다", async ({ page }) => {
+  await page.goto("/fastfood/real");
+  await page.getByRole("link", { name: "미션 수행하기 선택하기" }).click();
+  await expect(page).toHaveURL("/fastfood/real/mission");
+  await expect(page.getByText("불고기버거 세트 1개를 매장에서 먹도록 주문하세요.")).toBeVisible();
+  await expect(page.getByText("사이드: 감자튀김 · 음료: 콜라 · 카드 결제")).toBeVisible();
+  const conditions = page.getByRole("region", { name: "완료 조건" });
+  await expect(conditions).toContainText("감자튀김 · 콜라 선택");
+});
+
+test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문하고 미션에 성공한다", async ({
+  page,
+}) => {
+  await startMission(page);
+  await expect(page.getByText("미션: 불고기버거 세트 · 매장 · 카드")).toBeVisible();
+  await expect(page.getByText("패스트푸드는 주문 전에 먼저 선택해요")).toBeVisible();
+  await expect(page.locator("[data-practice-target]")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await expect(page.getByText("2 / 9")).toBeVisible();
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+
+  await expect(page.getByText("3 / 9")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "어떤 구성으로 드시나요?" })).toBeVisible();
+  await page.getByRole("button", { name: /^세트/ }).click();
+
+  await expect(page.getByText("4 / 9")).toBeVisible();
+  // 사이드·음료는 처음에 아무것도 고르지 않은 상태다
+  await expect(page.getByRole("button", { name: "감자튀김 기본" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await page.getByRole("button", { name: "감자튀김 기본" }).click();
+  await page.getByRole("button", { name: "콜라 기본" }).click();
+  await expect(page.getByRole("button", { name: "콜라 기본" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByRole("button", { name: "선택 완료" }).click();
+
+  await expect(page.getByText("5 / 9")).toBeVisible();
+  await expect(main(page)).toContainText("불고기버거 세트");
+  await expect(main(page)).toContainText("금액7,200원");
+  await page.getByRole("button", { name: "장바구니 담기" }).click();
+
+  await expect(page.getByText("6 / 9")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "메뉴를 더 골라 보세요" })).toBeVisible();
+  await expect(main(page)).toContainText("불고기버거 세트 × 1");
+  await page.getByRole("button", { name: "주문 내역 확인 후 결제하기" }).click();
+
+  await expect(page.getByText("7 / 9")).toBeVisible();
+  const review = page.getByRole("list", { name: "주문 내역" });
+  await expect(review).toContainText("감자튀김 · 콜라");
+  await expect(main(page)).toContainText("이용 방법매장");
+  await expect(main(page)).toContainText("결제 금액7,200원");
+  await page.getByRole("button", { name: "주문 확인" }).click();
+
+  await expect(page.getByText("8 / 9")).toBeVisible();
+  await expect(main(page)).toContainText("카드를 아래쪽 리더기에 넣어 주세요");
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await expect(page.getByText("결제 · 신용·체크카드")).toBeVisible();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await expect(page.getByText("9 / 9")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "결제가 완료되었습니다" })).toBeVisible();
+  await expect(main(page)).toContainText("A-127");
+  await expect(main(page)).toContainText("영수증 출력 중");
+  await page.getByRole("button", { name: "주문번호 확인" }).click();
+
+  await expect(page.getByRole("heading", { name: "미션을 성공했어요!" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
+    "aria-valuenow",
+    "100",
+  );
+  await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
+    "불고기버거 세트 · 감자튀김 · 콜라 · 매장 · 카드 결제",
+  );
+  await expect(main(page)).toContainText("주문번호 A-127");
+});
+
+test("사이드·음료와 결제 방법이 다르면 주문은 완료되고 다른 점을 보여 준다", async ({ page }) => {
+  await startMission(page);
+  await addBulgogiSet(page, "샐러드 +500원", "제로콜라 +0원");
+  await payWith(page, "모바일페이");
+  await page.getByRole("button", { name: "주문번호 확인" }).click();
+
+  await expect(page.getByRole("heading", { name: "주문은 완료됐어요" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
+    "aria-valuenow",
+    "50",
+  );
+  const differences = page.getByRole("region", { name: "미션과 다른 점" });
+  await expect(differences).toContainText("사이드: 샐러드를 골랐어요 → 미션은 감자튀김");
+  await expect(differences).toContainText("음료: 제로콜라를 골랐어요 → 미션은 콜라");
+  await expect(differences).toContainText("결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드");
+});
+
+test("단품을 고르면 사이드·음료 없이 담기 화면으로 가고, 판정에서 알려 준다", async ({ page }) => {
+  await startMission(page);
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+  await page.getByRole("button", { name: /^단품/ }).click();
+  await expect(page.getByText("5 / 9")).toBeVisible();
+  await expect(main(page)).toContainText("구성버거만");
+  await page.getByRole("button", { name: "장바구니 담기" }).click();
+  await payWith(page, "신용·체크카드");
+  await page.getByRole("button", { name: "주문번호 확인" }).click();
+
+  const differences = page.getByRole("region", { name: "미션과 다른 점" });
+  await expect(differences).toContainText("구성: 단품을 골랐어요 → 미션은 세트");
+  await expect(differences).toContainText("사이드·음료를 고르지 않았어요");
+});
+
+test("사이드·음료를 다 고르지 않고 선택 완료를 누르면 알려 준다", async ({ page }) => {
+  await startMission(page);
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+  await page.getByRole("button", { name: /^세트/ }).click();
+  await page.getByRole("button", { name: "감자튀김 기본" }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+
+  await expect(page.getByTestId("app-shell").getByRole("alert")).toContainText(
+    "음료를 골라 주세요",
+  );
+  await expect(page.getByText("4 / 9")).toBeVisible();
+});
+
+test("담기 화면에서 사이드를 누르면 구성 화면으로 돌아가고, 수량을 바꾸면 금액이 바뀐다", async ({
+  page,
+}) => {
+  await startMission(page);
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+  await page.getByRole("button", { name: /^세트/ }).click();
+  await page.getByRole("button", { name: "감자튀김 기본" }).click();
+  await page.getByRole("button", { name: "콜라 기본" }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+
+  await page.getByRole("button", { name: "사이드 감자튀김 바꾸기" }).click();
+  await expect(page.getByText("4 / 9")).toBeVisible();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+
+  await page.getByRole("button", { name: "수량 더하기" }).click();
+  await expect(main(page)).toContainText("금액14,400원");
+});
+
+test("주문 확인에서 메뉴 추가하기를 누르면 메뉴판으로 돌아가고, 수량도 바꿀 수 있다", async ({
+  page,
+}) => {
+  await startMission(page);
+  await addBulgogiSet(page);
+  await page.getByRole("button", { name: "주문 내역 확인 후 결제하기" }).click();
+
+  await page.getByRole("button", { name: "불고기버거 세트 수량 더하기" }).click();
+  await expect(main(page)).toContainText("결제 금액14,400원");
+
+  await page.getByRole("button", { name: "메뉴 추가하기" }).click();
+  await expect(page.getByRole("heading", { name: "메뉴를 더 골라 보세요" })).toBeVisible();
+  await expect(main(page)).toContainText("불고기버거 세트 × 2");
+});
+
+test("결제 방법에서 쿠폰·포인트는 준비 중이라고 알려 준다", async ({ page }) => {
+  await startMission(page);
+  await addBulgogiSet(page);
+  await page.getByRole("button", { name: "주문 내역 확인 후 결제하기" }).click();
+  await page.getByRole("button", { name: "주문 확인" }).click();
+
+  await page.getByRole("button", { name: "쿠폰·포인트" }).click();
+  const dialog = page.getByRole("dialog", { name: "준비 중이에요" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "확인" }).click();
+  await expect(page.getByText("8 / 9")).toBeVisible();
+});
+
+test("음성 도우미는 패스트푸드에 맞는 예시를 보여 준다", async ({ page }) => {
+  await startMission(page);
+  await page.getByRole("button", { name: "음성 도우미" }).click();
+  const sheet = page.getByRole("dialog", { name: "AI 음성 도우미" });
+  await expect(sheet).toContainText("매장에서 먹기를 누르면 돼요.");
+});

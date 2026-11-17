@@ -1,6 +1,8 @@
 import { getCafeMenu, SIZE_LABEL } from "@/features/cafe/catalog";
 import {
   freeOptionSummaries,
+  itemName,
+  setContents,
   selectedPaidOptions,
   type DineOption,
   type DrinkItem,
@@ -52,9 +54,13 @@ const PAYMENT_SHORT: Record<PaymentMethod, string> = {
 
 /** 결과 화면의 완료한 주문. 예: "아이스 아메리카노 Large 2잔 · 포장 · 카드 결제" */
 export function realOrderSummary(order: OrderState): string {
+  /* 음료는 "아이스 아메리카노 Large 2잔", 버거는 "불고기버거 세트 · 감자튀김 · 콜라" (1개면 개수를 생략) */
   const items = order.cart
-    .map((item) => (item.type === "drink" ? `${realDrinkName(item)} ${item.quantity}잔` : ""))
-    .filter(Boolean)
+    .map((item) => {
+      if (item.type === "drink") return `${realDrinkName(item)} ${item.quantity}잔`;
+      const name = item.quantity > 1 ? `${itemName(item)} ${item.quantity}개` : itemName(item);
+      return [name, setContents(item)].filter(Boolean).join(" · ");
+    })
     .join(", ");
   return [
     items,

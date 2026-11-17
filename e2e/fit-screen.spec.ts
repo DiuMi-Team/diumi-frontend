@@ -55,6 +55,7 @@ for (const route of [
   "/cafe",
   "/cafe/real",
   "/cafe/practice",
+  "/fastfood/real",
   "/fastfood",
   "/fastfood/practice",
 ]) {
@@ -175,5 +176,28 @@ test("실전 미션은 휴대폰에서 화면마다 다음으로 가는 버튼�
   await page.getByRole("button", { name: "결제 완료 확인" }).click();
   await expectInView("결제 완료 확인");
   await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await expectInView("다시 도전하기");
+
+  await page.goto("/fastfood/real/mission");
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
+  await page.getByRole("button", { name: "매장에서 먹기" }).click();
+  await expectInView("선택한 메뉴 보기");
+  await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
+  await page.getByRole("button", { name: /^세트/ }).click();
+  await expectInView("선택 완료");
+  await page.getByRole("button", { name: "감자튀김 기본" }).click();
+  await page.getByRole("button", { name: "콜라 기본" }).click();
+  await page.getByRole("button", { name: "선택 완료" }).click();
+  await expectInView("장바구니 담기");
+  await page.getByRole("button", { name: "장바구니 담기" }).click();
+  await expectInView("주문 내역 확인 후 결제하기");
+  await page.getByRole("button", { name: "주문 내역 확인 후 결제하기" }).click();
+  await expectInView(/^주문 확인/);
+  await page.getByRole("button", { name: /^주문 확인/ }).click();
+  await expectInView("기프트카드");
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await expectInView("주문번호 확인");
+  await page.getByRole("button", { name: "주문번호 확인" }).click();
   await expectInView("다시 도전하기");
 });

@@ -69,6 +69,7 @@ test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문
   await page.getByRole("button", { name: "선택 완료" }).click();
 
   await expect(page.getByText("5 / 9")).toBeVisible();
+  await expect(page.getByText("미션: 불고기버거 세트 · 매장 · 카드")).toBeVisible();
   await expect(main(page)).toContainText("불고기버거 세트");
   await expect(main(page)).toContainText("금액7,200원");
   await page.getByRole("button", { name: "장바구니 담기" }).click();
@@ -92,12 +93,15 @@ test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문
   await page.getByRole("button", { name: "결제 완료 확인" }).click();
 
   await expect(page.getByText("9 / 9")).toBeVisible();
+  // 미션은 첫 화면 뒤에도 결제 완료(9/9)까지 진행바 아래에 계속 보인다
+  await expect(page.getByText("미션: 불고기버거 세트 · 매장 · 카드")).toBeVisible();
   await expect(page.getByRole("heading", { name: "결제가 완료되었습니다" })).toBeVisible();
   await expect(main(page)).toContainText("A-127");
   await expect(main(page)).toContainText("영수증 출력 중");
   await page.getByRole("button", { name: "주문번호 확인" }).click();
 
   await expect(page.getByRole("heading", { name: "미션을 성공했어요!" })).toBeVisible();
+  await expect(page.getByText(/^미션:/)).toHaveCount(0);
   await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
     "aria-valuenow",
     "100",

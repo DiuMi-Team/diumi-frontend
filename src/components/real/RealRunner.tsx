@@ -242,7 +242,10 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
         } ${SCREEN_GAP[screen] ?? "gap-3 short:gap-2"}`}
       >
         {progress && <MissionProgress step={progress.step} label={progress.label} />}
-        {screen === "dine" && (mission ? <MissionChip>{mission.chip}</MissionChip> : <FreeBadge />)}
+        {/* 미션은 진행바가 있는 모든 화면(1/9~9/9)에서 계속 보여준다 */}
+        {mission
+          ? progress && <MissionChip>{mission.chip}</MissionChip>
+          : screen === "dine" && <FreeBadge />}
         <RealProvider
           value={{
             setup,

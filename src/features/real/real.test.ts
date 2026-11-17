@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import { endSession, getMockSession, logEvents, startSession } from "@/features/api/session";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
-import { judgeMission } from "@/features/real/judge";
+import { judgeMission, objectParticle } from "@/features/real/judge";
 import {
   formatDuration,
   realDrinkDetail,
   realDrinkName,
   realOrderSummary,
 } from "@/features/real/labels";
-import { CAFE_REAL_MISSION } from "@/features/real/missions";
+import { CAFE_REAL_MISSION, FASTFOOD_REAL_MISSION } from "@/features/real/missions";
 
 const REAL = { ...EMPTY_ORDER, sizeMenu: "real" as const };
 
@@ -59,7 +59,7 @@ describe("실전 음료 표기", () => {
 describe("실전 카페 미션", () => {
   it("아이스 아메리카노 Large 2잔을 포장·카드로 주문하는 미션이다", () => {
     expect(CAFE_REAL_MISSION.expected).toEqual({
-      cart: [{ menuId: "americano", temperature: "ice", size: "large", quantity: 2 }],
+      item: { type: "drink", menuId: "americano", temperature: "ice", size: "large", quantity: 2 },
       dineOption: "takeout",
       paymentMethod: "card",
     });
@@ -180,5 +180,93 @@ describe("미션 판정", () => {
     expect(realOrderSummary(order(base))).toBe("아이스 아메리카노 Large 2잔 · 포장 · 카드 결제");
     expect(formatDuration(161_000)).toBe("2분 41초");
     expect(formatDuration(9_400)).toBe("9초");
+  });
+});
+
+describe("실전 패스트푸드", () => {
+  const set: OrderAction[] = [
+    { type: "setDineOption", value: "dineIn" },
+    { type: "selectBurger", menuId: "bulgogi" },
+    { type: "chooseSet", set: true },
+    { type: "setSide", value: "fries" },
+    { type: "setSetDrink", value: "cola" },
+    { type: "addDraftToCart" },
+    { type: "selectPayment", value: "card" },
+    { type: "completePayment" },
+  ];
+
+  it("진행 단계: 구성 3, 사이드·음료 4, 담기 5, 메뉴 더 고르기 6, 주문 확인 7", () => {
+    expect(realProgress("setChoice", REAL, "fastfood")).toEqual({ step: 3, label: "구성 선택" });
+    expect(realProgress("setCompose", REAL, "fastfood").step).toBe(4);
+    expect(realProgress("burgerConfirm", REAL, "fastfood").step).toBe(5);
+    expect(realProgress("menu", REAL, "fastfood").step).toBe(2);
+    expect(realProgress("menu", order(set), "fastfood").step).toBe(6);
+    expect(realProgress("orderReview", REAL, "fastfood").step).toBe(7);
+    expect(realProgress("paymentMethod", REAL, "fastfood")).toEqual({
+      step: 8,
+      label: "결제 방법",
+    });
+  });
+
+  it("미션대로 주문하면 성공, 100%다", () => {
+    const result = judgeMission(FASTFOOD_REAL_MISSION, order(set));
+    expect(result.success).toBe(true);
+    expect(result.percent).toBe(100);
+  });
+
+  it("단품·이용 방법이 다르면 각각 알려 준다", () => {
+    const result = judgeMission(
+      FASTFOOD_REAL_MISSION,
+      order([
+        { type: "setDineOption", value: "takeout" },
+        { type: "selectBurger", menuId: "bulgogi" },
+        { type: "chooseSet", set: false },
+        { type: "addDraftToCart" },
+        { type: "selectPayment", value: "card" },
+        { type: "completePayment" },
+      ]),
+    );
+    expect(result.percent).toBe(25);
+    expect(result.conditions.map((condition) => condition.differences)).toEqual([
+      ["이용 방법: 포장을 골랐어요 → 미션은 매장"],
+      ["구성: 단품을 골랐어요 → 미션은 세트"],
+      ["사이드·음료를 고르지 않았어요 → 미션은 감자튀김 · 콜라"],
+      [],
+    ]);
+  });
+
+  it("사이드·음료·수량이 다르면 알려 준다", () => {
+    const result = judgeMission(
+      FASTFOOD_REAL_MISSION,
+      order([
+        { type: "setDineOption", value: "dineIn" },
+        { type: "selectBurger", menuId: "bulgogi" },
+        { type: "chooseSet", set: true },
+        { type: "setSide", value: "salad" },
+        { type: "setSetDrink", value: "zero" },
+        { type: "setQuantity", value: 2 },
+        { type: "addDraftToCart" },
+        { type: "selectPayment", value: "card" },
+        { type: "completePayment" },
+      ]),
+    );
+    expect(result.conditions[1].differences).toEqual(["수량: 2개 → 미션은 1개"]);
+    expect(result.conditions[2].differences).toEqual([
+      "사이드: 샐러드를 골랐어요 → 미션은 감자튀김",
+      "음료: 제로콜라를 골랐어요 → 미션은 콜라",
+    ]);
+  });
+
+  it("결과 화면 문구: 세트 구성과 이용 방법", () => {
+    expect(realOrderSummary(order(set))).toBe(
+      "불고기버거 세트 · 감자튀김 · 콜라 · 매장 · 카드 결제",
+    );
+  });
+
+  it("목적격 조사는 받침에 맞춘다", () => {
+    expect(objectParticle("단품")).toBe("을");
+    expect(objectParticle("콜라")).toBe("를");
+    expect(objectParticle("HOT")).toBe("을");
+    expect(objectParticle("Large")).toBe("를");
   });
 });

@@ -1,10 +1,13 @@
 import type { RealScreen } from "@/features/real/flow";
+import type { PracticeService } from "@/features/practice/types";
+
+type VoiceSample = { question: string; answer: string };
 
 /**
  * 음성 도우미 시트에 보여 줄 예시 질문·답변 (mock).
  * 음성 인식과 AI 답변은 API 연동 때 붙이고, 지금은 화면마다 정해진 예시만 보여 준다.
  */
-export const VOICE_SAMPLES: Record<RealScreen, { question: string; answer: string }> = {
+export const VOICE_SAMPLES: Record<RealScreen, VoiceSample> = {
   intro: {
     question: "무엇부터 하면 되나요?",
     answer: "미션 시작하기를 누르면 주문이 시작돼요.",
@@ -37,6 +40,22 @@ export const VOICE_SAMPLES: Record<RealScreen, { question: string; answer: strin
     question: "쿠폰이 없으면요?",
     answer: "다음을 누르면 혜택 없이 결제로 넘어가요.",
   },
+  setChoice: {
+    question: "세트가 뭐예요?",
+    answer: "버거에 감자튀김과 콜라가 함께 나와요. 세트를 누르세요.",
+  },
+  setCompose: {
+    question: "콜라는 어디서 골라요?",
+    answer: "음료 줄에서 콜라를 누르고 선택 완료를 누르세요.",
+  },
+  burgerConfirm: {
+    question: "이대로 담으면 되나요?",
+    answer: "맞으면 장바구니 담기를 누르세요.",
+  },
+  orderReview: {
+    question: "이제 결제하면 되나요?",
+    answer: "주문 내역이 맞으면 주문 확인을 누르세요.",
+  },
   paymentMethod: {
     question: "카드로 내려면요?",
     answer: "신용·체크카드를 누르면 돼요.",
@@ -62,3 +81,23 @@ export const VOICE_SAMPLES: Record<RealScreen, { question: string; answer: strin
     answer: "다시 도전하기를 누르면 처음부터 할 수 있어요.",
   },
 };
+
+/** 카페와 문구가 다른 패스트푸드 화면 */
+const FASTFOOD_SAMPLES: Partial<Record<RealScreen, VoiceSample>> = {
+  dine: {
+    question: "매장에서 먹으려면요?",
+    answer: "매장에서 먹기를 누르면 돼요.",
+  },
+  menu: {
+    question: "불고기버거는 어디 있어요?",
+    answer: "메뉴판 첫 번째 칸에 있어요.",
+  },
+  done: {
+    question: "이제 끝났나요?",
+    answer: "네, 결제가 끝났어요. 영수증을 챙기고 주문번호 확인을 누르세요.",
+  },
+};
+
+export function voiceSample(service: PracticeService, screen: RealScreen): VoiceSample {
+  return (service === "fastfood" && FASTFOOD_SAMPLES[screen]) || VOICE_SAMPLES[screen];
+}

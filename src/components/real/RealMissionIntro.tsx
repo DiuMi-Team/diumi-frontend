@@ -1,4 +1,4 @@
-import { IcedCoffeeIcon } from "@/components/icons/kiosk-icons";
+import { BurgerIcon, IcedCoffeeIcon } from "@/components/icons/kiosk-icons";
 import { ChevronRightIcon, MicIcon } from "@/components/icons/ui-icons";
 import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
 import type { RealMission } from "@/features/real/missions";
@@ -18,10 +18,14 @@ export function RealMissionIntro({ mission, onStart }: RealMissionIntroProps) {
       </span>
       <h1 className="text-28 leading-[1.3] font-bold">오늘의 미션</h1>
       <div className="flex items-center gap-3.5 rounded-3xl bg-mint-light px-5 py-[18px] short:py-3 short:[&>svg]:size-12">
-        <IcedCoffeeIcon size={60} />
+        {mission.expected.item.type === "burger" ? (
+          <BurgerIcon burgerId={mission.expected.item.menuId} size={60} />
+        ) : (
+          <IcedCoffeeIcon size={60} />
+        )}
         <span className="flex flex-col gap-1">
           <b className="text-20 leading-[1.4]">{mission.instruction}</b>
-          <span className="text-16">결제 방법: {mission.payment}</span>
+          <span className="text-16">{mission.note}</span>
         </span>
       </div>
       <section

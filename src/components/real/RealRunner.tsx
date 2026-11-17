@@ -16,6 +16,12 @@ import { RealProvider } from "@/components/real/RealContext";
 import { RealMissionIntro } from "@/components/real/RealMissionIntro";
 import { RealCartScreen } from "@/components/real/screens/RealCartScreen";
 import { RealDineScreen } from "@/components/real/screens/RealDineScreen";
+import {
+  RealBurgerConfirmScreen,
+  RealOrderReviewScreen,
+  RealSetChoiceScreen,
+  RealSetComposeScreen,
+} from "@/components/real/screens/RealFastfoodScreens";
 import { RealFreeOptionsScreen } from "@/components/real/screens/RealFreeOptionsScreen";
 import { RealMembershipScreen } from "@/components/real/screens/RealMembershipScreen";
 import { RealMenuScreen } from "@/components/real/screens/RealMenuScreen";
@@ -40,7 +46,7 @@ import {
 import { FINISHED_SCREENS, realProgress, type RealScreen } from "@/features/real/flow";
 import { judgeMission } from "@/features/real/judge";
 import type { RealSetup } from "@/features/real/missions";
-import { VOICE_SAMPLES } from "@/features/real/voice";
+import { voiceSample } from "@/features/real/voice";
 
 const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
   dine: RealDineScreen,
@@ -50,6 +56,10 @@ const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
   freeOptions: RealFreeOptionsScreen,
   cart: RealCartScreen,
   membership: RealMembershipScreen,
+  setChoice: RealSetChoiceScreen,
+  setCompose: RealSetComposeScreen,
+  burgerConfirm: RealBurgerConfirmScreen,
+  orderReview: RealOrderReviewScreen,
   paymentMethod: RealPaymentMethodScreen,
   payMobile: RealPayMobileScreen,
   payGiftCard: RealPayGiftCardScreen,
@@ -64,6 +74,7 @@ const SCREEN_GAP: Partial<Record<RealScreen, string>> = {
   options: "gap-2.5 short:gap-1.5",
   paidOptions: "gap-2.5 short:gap-1.5",
   freeOptions: "gap-2.5 short:gap-1.5",
+  setCompose: "gap-2.5 short:gap-1.5",
   done: "gap-3.5 short:gap-2.5",
   result: "gap-3.5 short:gap-2.5",
 };
@@ -83,6 +94,7 @@ const NEW_SESSION = (): SessionRef => ({ id: null, started: false, startedAt: 0,
  * 실전모드. 강조·정답 없이 스스로 주문한다.
  * - 미션 수행 (RCM00~14): 미션 확인 → 주문 → 결제 → 결제 완료 → 판정 결과
  * - 자유 체험 (RCF01~13): 바로 주문 → 결제 → 체험 완료 (판정 없음)
+ * 패스트푸드 (RBM00~13, RBF01~12)도 같은 흐름이고, 메뉴 이후 화면만 다르다
  */
 export function RealRunner({ setup }: { setup: RealSetup }) {
   const router = useRouter();
@@ -198,7 +210,9 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
 
   const finished = FINISHED_SCREENS.includes(screen);
   const progress =
-    !mission || screen === "intro" || screen === "result" ? null : realProgress(screen, order);
+    !mission || screen === "intro" || screen === "result"
+      ? null
+      : realProgress(screen, order, setup.service);
   const Screen =
     screen === "intro"
       ? null
@@ -254,8 +268,8 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
       <VoiceAssistantSheet
         open={voiceOpen}
         onClose={() => setVoiceOpen(false)}
-        question={VOICE_SAMPLES[screen].question}
-        answer={VOICE_SAMPLES[screen].answer}
+        question={voiceSample(setup.service, screen).question}
+        answer={voiceSample(setup.service, screen).answer}
       />
       <Dialog
         open={quitOpen}

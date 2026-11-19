@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { endSession, getMockSession, logEvents, startSession } from "@/features/api/session";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
 import { judgeMission, objectParticle } from "@/features/real/judge";
@@ -64,31 +63,6 @@ describe("실전 카페 미션", () => {
       paymentMethod: "card",
     });
     expect(CAFE_REAL_MISSION.conditions).toHaveLength(4);
-  });
-});
-
-describe("체험 세션 mock API", () => {
-  it("세션을 시작하고, 행동을 모아 기록하고, 결과와 함께 끝낸다", async () => {
-    const { sessionId } = await startSession({ mode: "mission", service: "cafe", missionId: "m" });
-    await logEvents(sessionId, [
-      { type: "screen_view", screen: "dine", elapsedMs: 0 },
-      { type: "tap", screen: "dine", target: "dine:takeout", elapsedMs: 1200 },
-    ]);
-    const result = await endSession(sessionId, { success: true, elapsedMs: 60000, helpCount: 1 });
-
-    expect(result.success).toBe(true);
-    expect(getMockSession(sessionId)).toMatchObject({
-      mode: "mission",
-      service: "cafe",
-      events: [{ type: "screen_view" }, { type: "tap", target: "dine:takeout" }],
-      summary: { helpCount: 1 },
-    });
-  });
-
-  it("세션마다 다른 아이디를 준다", async () => {
-    const first = await startSession({ mode: "free", service: "cafe" });
-    const second = await startSession({ mode: "free", service: "cafe" });
-    expect(first.sessionId).not.toBe(second.sessionId);
   });
 });
 

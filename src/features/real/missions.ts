@@ -18,6 +18,8 @@ export type ExpectedItem =
 /** 실전모드 미션. 정답 강조 없이 스스로 주문하고, 결제를 마치면 미션대로 했는지 판정한다 */
 export type RealMission = {
   id: string;
+  /** 백엔드 미션 ID (GET /scenarios/{id}/missions) */
+  apiMissionId: number;
   service: PracticeService;
   /** 오늘의 미션 문장 */
   instruction: string;
@@ -41,6 +43,7 @@ export type RealMission = {
 
 export const CAFE_REAL_MISSION: RealMission = {
   id: "cafe-real-mission",
+  apiMissionId: 101,
   service: "cafe",
   instruction: "아이스 아메리카노 Large 2잔을 포장으로 주문하세요.",
   note: "결제 방법: 신용·체크카드",
@@ -57,6 +60,7 @@ export const CAFE_REAL_MISSION: RealMission = {
 
 export const FASTFOOD_REAL_MISSION: RealMission = {
   id: "fastfood-real-mission",
+  apiMissionId: 201,
   service: "fastfood",
   instruction: "불고기버거 세트 1개를 매장에서 먹도록 주문하세요.",
   note: "사이드: 감자튀김 · 음료: 콜라 · 카드 결제",

@@ -30,10 +30,12 @@ type RequestOptions = {
   /** 방문자 등록 외 모든 API에 필요한 X-Visitor-Id */
   visitorId?: string;
   signal?: AbortSignal;
+  /** 탭을 닫거나 페이지를 떠나도 요청이 끝까지 가게 한다 */
+  keepalive?: boolean;
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, visitorId, signal } = options;
+  const { method = "GET", body, visitorId, signal, keepalive } = options;
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (visitorId) headers["X-Visitor-Id"] = visitorId;
@@ -43,6 +45,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers,
     body: body === undefined ? undefined : JSON.stringify(toSnakeKeys(body)),
     signal,
+    keepalive,
   });
 
   let envelope: { success?: boolean; data?: unknown; error?: ApiErrorBody | null };

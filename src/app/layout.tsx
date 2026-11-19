@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_KR } from "next/font/google";
 import { TouchActiveSupport } from "@/components/common/TouchActiveSupport";
+import { VisitorRegistration } from "@/components/common/VisitorRegistration";
 import "./globals.css";
 
 const ibmPlexSansKr = IBM_Plex_Sans_KR({
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
         <TouchActiveSupport />
+        <VisitorRegistration />
       </body>
     </html>
   );

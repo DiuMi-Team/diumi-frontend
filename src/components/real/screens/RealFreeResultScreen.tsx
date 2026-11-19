@@ -7,7 +7,7 @@ import { CheckIcon, MicIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 import { formatDuration } from "@/features/real/labels";
 
 /** 자유 체험 완료 (RCF13). 성공·실패 없이 번호와 소요 시간·도움 요청만 보여 준다 */
@@ -48,12 +48,14 @@ export function RealFreeResultScreen() {
         자유 체험은 성공·실패 없이 주문 과정과 도움 요청 기록만 저장해요.
       </p>
       <Spacer />
-      <button type="button" onClick={restart} className={REAL_PRIMARY_CLASS}>
-        한 번 더 체험
-      </button>
-      <Link href="/" className={REAL_OUTLINE_CLASS}>
-        처음으로
-      </Link>
+      <RealBottomBar>
+        <button type="button" onClick={restart} className={REAL_PRIMARY_CLASS}>
+          한 번 더 체험
+        </button>
+        <Link href="/" className={REAL_OUTLINE_CLASS}>
+          처음으로
+        </Link>
+      </RealBottomBar>
     </>
   );
 }

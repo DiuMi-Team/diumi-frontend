@@ -1,6 +1,6 @@
 import { BurgerIcon, IcedCoffeeIcon } from "@/components/icons/kiosk-icons";
 import { ChevronRightIcon, MicIcon } from "@/components/icons/ui-icons";
-import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 import type { RealMission } from "@/features/real/missions";
 
 type RealMissionIntroProps = {
@@ -53,10 +53,12 @@ export function RealMissionIntro({ mission, onStart }: RealMissionIntroProps) {
         </span>
       </p>
       <div className="flex-1" />
-      <button type="button" onClick={onStart} className={REAL_PRIMARY_CLASS}>
-        미션 시작하기
-        <ChevronRightIcon size={20} />
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={onStart} className={REAL_PRIMARY_CLASS}>
+          미션 시작하기
+          <ChevronRightIcon size={20} />
+        </button>
+      </RealBottomBar>
     </>
   );
 }

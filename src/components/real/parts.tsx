@@ -3,12 +3,22 @@ import { KIOSK_OUTLINE_CLASS, KIOSK_PRIMARY_CLASS } from "@/components/practice/
 
 /* 실전모드 화면이 함께 쓰는 모양. 강조·흐림 없이 모든 칸을 누를 수 있다 */
 
-/**
- * 주 버튼은 본문 아래에 붙어 있다. 키 작은 화면에서 내용이 넘쳐도 다음으로 가는 버튼이 늘 보이게 하고,
- * 위로 흰 그림자를 둬서 지나가는 내용과 겹쳐 보이지 않게 한다. 넘치지 않으면 원래 자리와 같다.
- */
-export const REAL_PRIMARY_CLASS = `${KIOSK_PRIMARY_CLASS} sticky bottom-0 z-10 shadow-[0_-12px_12px_-4px_var(--color-white)]`;
+export const REAL_PRIMARY_CLASS = KIOSK_PRIMARY_CLASS;
 export const REAL_OUTLINE_CLASS = KIOSK_OUTLINE_CLASS;
+
+/**
+ * 화면 맨 아래 버튼 자리. 키 작은 화면에서 내용이 넘쳐도 다음으로 가는 버튼이 늘 보이게 본문 아래에 붙는다.
+ * 흰 바탕이 양옆 여백과 본문 아래 여백(--real-pb, RealRunner의 main이 정한다)까지 덮고 위로 흰 그림자를 둬서,
+ * 스크롤할 때 지나가는 내용이 버튼 뒤나 둥근 모서리 옆으로 비치지 않는다. 넘치지 않으면 원래 자리와 같다.
+ * 버튼 자체에 바탕을 넣지 않는 건, 누를 때 버튼이 작아지고 어두워지는 효과가 바탕까지 번지지 않게 하려는 것이다.
+ */
+export function RealBottomBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky bottom-[calc(var(--real-pb)*-1)] z-10 -mx-5 mb-[calc(var(--real-pb)*-1)] flex flex-col gap-[inherit] bg-white px-5 pb-(--real-pb) shadow-[0_-12px_12px_-4px_var(--color-white)]">
+      {children}
+    </div>
+  );
+}
 
 const TILE_BASE = "flex items-center justify-center rounded-[18px] font-bold";
 const SELECTED = "border-3 border-primary bg-white text-primary";

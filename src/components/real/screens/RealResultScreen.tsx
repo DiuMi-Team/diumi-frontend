@@ -8,7 +8,7 @@ import { CheckIcon, MicIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 import { judgeMission } from "@/features/real/judge";
 import { formatDuration, realOrderSummary } from "@/features/real/labels";
 
@@ -110,12 +110,14 @@ export function RealResultScreen() {
       </section>
 
       <Spacer />
-      <button type="button" onClick={restart} className={REAL_PRIMARY_CLASS}>
-        다시 도전하기
-      </button>
-      <Link href="/" className={REAL_OUTLINE_CLASS}>
-        처음으로
-      </Link>
+      <RealBottomBar>
+        <button type="button" onClick={restart} className={REAL_PRIMARY_CLASS}>
+          다시 도전하기
+        </button>
+        <Link href="/" className={REAL_OUTLINE_CLASS}>
+          처음으로
+        </Link>
+      </RealBottomBar>
     </>
   );
 }

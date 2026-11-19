@@ -10,6 +10,7 @@ import {
   OptionLabel,
   REAL_OUTLINE_CLASS,
   REAL_PRIMARY_CLASS,
+  RealBottomBar,
   SelectTile,
   Stepper,
 } from "@/components/real/parts";
@@ -149,9 +150,11 @@ export function RealSetComposeScreen() {
         </p>
       )}
       <Spacer />
-      <button type="button" onClick={confirm} className={REAL_PRIMARY_CLASS}>
-        선택 완료
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={confirm} className={REAL_PRIMARY_CLASS}>
+          선택 완료
+        </button>
+      </RealBottomBar>
     </>
   );
 }
@@ -235,16 +238,18 @@ export function RealBurgerConfirmScreen() {
         <span>{formatWon(itemPrice(draft))}</span>
       </div>
       <Spacer />
-      <button
-        type="button"
-        onClick={() => {
-          act({ type: "addDraftToCart" }, "burger:addToCart");
-          go("menu");
-        }}
-        className={REAL_PRIMARY_CLASS}
-      >
-        장바구니 담기
-      </button>
+      <RealBottomBar>
+        <button
+          type="button"
+          onClick={() => {
+            act({ type: "addDraftToCart" }, "burger:addToCart");
+            go("menu");
+          }}
+          className={REAL_PRIMARY_CLASS}
+        >
+          장바구니 담기
+        </button>
+      </RealBottomBar>
     </>
   );
 }
@@ -324,10 +329,12 @@ export function RealOrderReviewScreen() {
       <button type="button" onClick={() => go("menu")} className={REAL_OUTLINE_CLASS}>
         {copy.addMore}
       </button>
-      <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
-        {copy.next}
-        <ChevronRightIcon size={20} />
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
+          {copy.next}
+          <ChevronRightIcon size={20} />
+        </button>
+      </RealBottomBar>
     </>
   );
 }

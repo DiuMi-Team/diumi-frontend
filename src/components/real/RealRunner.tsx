@@ -257,13 +257,13 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
         ref={mainRef}
         className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-5 *:shrink-0 short:pt-2 ${
           screen === "intro"
-            ? "gap-3 pt-[18px] pb-3 short:gap-2"
+            ? "gap-3 pt-[18px] [--real-pb:12px] short:gap-2"
             : screen === "result"
-              ? "pt-6 pb-5 short:pt-4 short:pb-4"
+              ? "pt-6 [--real-pb:20px] short:pt-4 short:[--real-pb:16px]"
               : finished
-                ? "pt-3.5 pb-5 short:pb-4"
-                : "pt-3.5 pb-3"
-        } ${SCREEN_GAP[screen] ?? "gap-3 short:gap-2"}`}
+                ? "pt-3.5 [--real-pb:20px] short:[--real-pb:16px]"
+                : "pt-3.5 [--real-pb:12px]"
+        } pb-(--real-pb) ${SCREEN_GAP[screen] ?? "gap-3 short:gap-2"}`}
       >
         {progress && <MissionProgress step={progress.step} label={progress.label} />}
         {/* 미션은 진행바가 있는 모든 화면(1/9~9/9)에서 계속 보여준다 */}
@@ -286,7 +286,8 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
           {Screen ? <Screen /> : mission && <RealMissionIntro mission={mission} onStart={start} />}
         </RealProvider>
       </main>
-      {!finished && (
+      {/* 미션 확인 화면은 아직 주문 전이라 음성 도우미를 두지 않는다 */}
+      {!finished && screen !== "intro" && (
         <div className="flex-none px-5 pb-4 short:pb-2.5">
           <VoiceButton onClick={openVoice} />
         </div>

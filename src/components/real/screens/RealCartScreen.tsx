@@ -4,7 +4,12 @@ import { IcedCoffeeIcon, MenuIcon } from "@/components/icons/kiosk-icons";
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { ScreenHeading, Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS, Stepper } from "@/components/real/parts";
+import {
+  REAL_OUTLINE_CLASS,
+  REAL_PRIMARY_CLASS,
+  RealBottomBar,
+  Stepper,
+} from "@/components/real/parts";
 import { cartTotal, couponDiscount, formatWon, payableTotal } from "@/features/order/order";
 import { realDrinkDetail, realDrinkName } from "@/features/real/labels";
 
@@ -68,10 +73,12 @@ export function RealCartScreen() {
       <button type="button" onClick={() => go("menu")} className={REAL_OUTLINE_CLASS}>
         메뉴 더 담기
       </button>
-      <button type="button" onClick={() => go("membership")} className={REAL_PRIMARY_CLASS}>
-        다음
-        <ChevronRightIcon size={20} />
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={() => go("membership")} className={REAL_PRIMARY_CLASS}>
+          다음
+          <ChevronRightIcon size={20} />
+        </button>
+      </RealBottomBar>
     </>
   );
 }

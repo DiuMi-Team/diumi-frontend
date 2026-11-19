@@ -36,14 +36,7 @@ import { RealDoneScreen } from "@/components/real/screens/RealDoneScreen";
 import { RealPaymentMethodScreen } from "@/components/real/screens/RealPaymentMethodScreen";
 import { RealFreeResultScreen } from "@/components/real/screens/RealFreeResultScreen";
 import { RealResultScreen } from "@/components/real/screens/RealResultScreen";
-import {
-  endSession,
-  logEvents,
-  startSession,
-  type SessionEndStatus,
-  type SessionEvent,
-  type StartedSession,
-} from "@/features/api/session";
+import { logEvents, type SessionEvent } from "@/features/api/session";
 import {
   EMPTY_ORDER,
   orderReducer,
@@ -52,6 +45,7 @@ import {
 } from "@/features/order/order";
 import { FINISHED_SCREENS, realProgress, type RealScreen } from "@/features/real/flow";
 import type { RealSetup } from "@/features/real/missions";
+import { RealSessionTracker } from "@/features/real/session-tracker";
 import { voiceSample } from "@/features/real/voice";
 
 const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
@@ -87,30 +81,8 @@ const SCREEN_GAP: Partial<Record<RealScreen, string>> = {
 
 const NEW_ORDER: OrderState = { ...EMPTY_ORDER, sizeMenu: "real" };
 
-type SessionRef = {
-  /** 백엔드 세션. 시작 응답이 오기 전이나 시작에 실패하면 null */
-  api: StartedSession | null;
-  started: boolean;
-  /** 끝낸 상태. 시작 응답 전에 끝내면 응답이 올 때 이 상태로 종료 요청을 보낸다 */
-  ended: SessionEndStatus | null;
-  startedAt: number;
-  buffer: SessionEvent[];
-};
-
-const NEW_SESSION = (): SessionRef => ({
-  api: null,
-  started: false,
-  ended: null,
-  startedAt: 0,
-  buffer: [],
-});
-
-/** 세션을 한 번만 끝낸다. 실패해도 화면은 그대로 진행한다 */
-function closeSession(current: SessionRef, status: SessionEndStatus, keepalive = false) {
-  if (!current.started || current.ended) return;
-  current.ended = status;
-  if (current.api) endSession(current.api, status, { keepalive }).catch(() => {});
-}
+/** 백엔드 결과에서 받은 소요 시간·도움 횟수. 받기 전이나 실패하면 프론트 값을 쓴다 */
+type ServerStats = { elapsedMs: number; helpCount: number };
 
 /**
  * 실전모드. 강조·정답 없이 스스로 주문한다.
@@ -131,7 +103,12 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [quitOpen, setQuitOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const session = useRef<SessionRef>(NEW_SESSION());
+  const [serverStats, setServerStats] = useState<ServerStats | null>(null);
+  const newTracker = () => new RealSessionTracker(setup.service, mission?.apiMissionId);
+  const [initialTracker] = useState(newTracker);
+  const tracker = useRef(initialTracker);
+  /** 메뉴·옵션 같은 나머지 행동 기록 (mock). 화면이 바뀔 때 모아서 보낸다 */
+  const eventBuffer = useRef<SessionEvent[]>([]);
   const mainRef = useRef<HTMLElement>(null);
   const screen = history[history.length - 1];
 
@@ -145,69 +122,74 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
    */
   useEffect(() => {
     clearTimeout(abandonTimer.current);
-    const onPageHide = () => closeSession(session.current, "ABANDONED", true);
+    const onPageHide = () => tracker.current.abandon(true);
     window.addEventListener("pagehide", onPageHide);
     return () => {
       window.removeEventListener("pagehide", onPageHide);
-      const leaving = session.current;
-      abandonTimer.current = setTimeout(() => closeSession(leaving, "ABANDONED", true), 0);
+      const leaving = tracker.current;
+      abandonTimer.current = setTimeout(() => leaving.abandon(true), 0);
     };
   }, []);
 
   const record = (type: string, target?: string) => {
-    const current = session.current;
-    if (!current.api) return;
-    current.buffer.push({ type, screen, target, elapsedMs: Date.now() - current.startedAt });
+    if (!tracker.current.sessionId) return;
+    eventBuffer.current.push({
+      type,
+      screen,
+      target,
+      elapsedMs: Date.now() - tracker.current.startedAt,
+    });
   };
 
-  /* 화면이 바뀌면 본문을 맨 위로 올리고, 모아 둔 행동 기록을 보낸다 (실패해도 진행은 계속한다) */
+  /*
+   * 화면이 바뀌면 본문을 맨 위로 올린다.
+   * 진행 단계가 바뀌었으면 지나온 백엔드 단계를 완료하고, 모아 둔 행동 기록(mock)을 보낸다.
+   */
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
-    const current = session.current;
-    if (!current.api || current.ended) return;
-    current.buffer.push({
+    const current = tracker.current;
+    if (screen !== "intro" && screen !== "result") {
+      current.enterProgress(realProgress(screen, order, setup.service).step);
+    }
+    const sessionId = current.sessionId;
+    if (!sessionId || current.isEnded) return;
+    eventBuffer.current.push({
       type: "screen_view",
       screen,
       elapsedMs: Date.now() - current.startedAt,
     });
-    const events = current.buffer.splice(0);
-    logEvents(current.api.sessionId, events).catch(() => {});
+    logEvents(sessionId, eventBuffer.current.splice(0)).catch(() => {});
+    // order는 화면이 바뀐 그 순간의 값만 쓴다 (장바구니가 차 있는지로 메뉴 화면의 단계를 가른다)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, history.length]);
 
   const go = (next: RealScreen) => setHistory((items) => [...items, next]);
 
-  /** 세션을 시작하고 시간을 재기 시작한다. 한 번만 시작한다 */
-  const beginSession = () => {
-    const current = session.current;
-    if (current.started) return;
-    current.started = true;
-    current.startedAt = Date.now();
-    startSession({ service: setup.service, missionId: mission?.apiMissionId })
-      .then((started) => {
-        current.api = started;
-        /* 응답이 오기 전에 그만뒀거나 결제를 마쳤으면 바로 끝낸다 */
-        if (current.ended) endSession(started, current.ended, { keepalive: true }).catch(() => {});
-      })
-      .catch(() => {});
-  };
-
-  /* 자유 체험은 미션 확인 없이 바로 시작한다 */
+  /* 자유 체험은 미션 확인 없이 바로 시작한다 (한 번만 시작된다) */
   useEffect(() => {
-    if (!mission) beginSession();
+    if (!mission) tracker.current.start();
   });
 
   const start = () => {
-    beginSession();
+    tracker.current.start();
     go("dine");
   };
 
+  /** 화면 안에서 앞 화면으로 돌아간다 (유료·무료 옵션을 다 고르고 옵션 화면으로 돌아갈 때) */
   const back = () => {
     if (history.length > 1) setHistory((items) => items.slice(0, -1));
     else router.push(setup.typeHref);
   };
 
+  /** 사용자가 "이전으로"를 눌렀다. 실전 유형 선택으로 나가는 게 아니면 뒤로 가기로 기록한다 */
+  const userBack = () => {
+    if (history.length > 1) tracker.current.recordAction("BACK");
+    back();
+  };
+
   const openVoice = () => {
     record("help_open");
+    tracker.current.recordAction("AI_HELP");
     setHelpCount((count) => count + 1);
     setVoiceOpen(true);
   };
@@ -219,21 +201,29 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   const finishPayment = (target: string) => {
     record("tap", target);
     const paid = orderReducer(order, { type: "completePayment" });
-    const elapsed = Date.now() - session.current.startedAt;
+    const current = tracker.current;
     setOrder(paid);
-    setElapsedMs(elapsed);
-    /* 단계 완료 연동 전에는 백엔드가 409(SESSION_NOT_READY_TO_COMPLETE)를 줄 수 있다. 화면 판정은 judge.ts가 한다 */
-    closeSession(session.current, "COMPLETED");
+    setElapsedMs(Date.now() - current.startedAt);
+    /* 소요 시간·도움 횟수는 백엔드 결과로 바꿔 보여 준다. 성공·실패와 다른 점은 아직 프론트 판정(judge.ts) */
+    current
+      .complete()
+      .then((result) => {
+        if (!result || tracker.current !== current) return;
+        setServerStats({ elapsedMs: result.elapsedSeconds * 1000, helpCount: result.aiHelpCount });
+      })
+      .catch(() => {});
     go(mission ? "done" : "result");
   };
 
   /** 다시 도전하기·한 번 더 체험: 처음 상태로 되돌린다 (자유 체험은 새 세션이 바로 시작된다) */
   const restart = () => {
-    closeSession(session.current, "ABANDONED");
-    session.current = NEW_SESSION();
+    tracker.current.abandon();
+    tracker.current = newTracker();
+    eventBuffer.current = [];
     setOrder(NEW_ORDER);
     setHelpCount(0);
     setElapsedMs(null);
+    setServerStats(null);
     setHistory([firstScreen]);
   };
 
@@ -261,7 +251,7 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
         right={<HeaderChip compact={setup.service === "fastfood"}>실전 · {serviceName}</HeaderChip>}
       />
       {!finished && (
-        <NavBar home={screen === "intro" ? "/" : () => setQuitOpen(true)} back={back} />
+        <NavBar home={screen === "intro" ? "/" : () => setQuitOpen(true)} back={userBack} />
       )}
       <main
         ref={mainRef}
@@ -289,7 +279,7 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
             back,
             finishPayment,
             restart,
-            stats: { elapsedMs: elapsedMs ?? 0, helpCount },
+            stats: serverStats ?? { elapsedMs: elapsedMs ?? 0, helpCount },
             comingSoon: () => setComingSoonOpen(true),
           }}
         >

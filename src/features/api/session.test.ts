@@ -120,6 +120,56 @@ describe("endSession", () => {
   });
 });
 
+describe("단계 완료·행동 기록·결과", () => {
+  const session = { sessionId: "session-1", visitorId: VISITOR_ID };
+
+  it("단계 완료는 반올림한 elapsed_ms를 보낸다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(201, { step_id: 11, is_last_step: false }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { completeStep } = await import("@/features/api/session");
+
+    await completeStep(session, 11, 1234.6);
+
+    expect(call(fetchMock, 0).url).toBe("/api/v1/sessions/session-1/steps/11/complete");
+    expect(call(fetchMock, 0).body).toEqual({ elapsed_ms: 1235 });
+  });
+
+  it("행동은 KST 오프셋이 붙은 occurred_at으로 보낸다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(201, { action_id: 1, is_valid: null }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { recordAction } = await import("@/features/api/session");
+
+    await recordAction(session, {
+      stepId: 12,
+      actionType: "AI_HELP",
+      occurredAt: Date.UTC(2026, 10, 19, 8, 29, 6, 824),
+    });
+
+    expect(call(fetchMock, 0).url).toBe("/api/v1/sessions/session-1/actions");
+    expect(call(fetchMock, 0).body).toEqual({
+      step_id: 12,
+      action_type: "AI_HELP",
+      occurred_at: "2026-11-19T17:29:06.824+09:00",
+    });
+  });
+
+  it("수행 결과를 camelCase로 돌려준다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        json(200, { session_id: "session-1", elapsed_seconds: 83, ai_help_count: 2, back_count: 1 }),
+      ),
+    );
+    const { getSessionResult } = await import("@/features/api/session");
+
+    await expect(getSessionResult(session)).resolves.toMatchObject({
+      elapsedSeconds: 83,
+      aiHelpCount: 2,
+      backCount: 1,
+    });
+  });
+});
+
 describe("logEvents (mock)", () => {
   it("세션별로 행동을 모아 둔다", async () => {
     const { getMockEvents, logEvents } = await import("@/features/api/session");

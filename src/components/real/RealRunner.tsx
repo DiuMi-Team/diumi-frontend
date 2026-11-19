@@ -14,6 +14,7 @@ import { HomeFilledIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { RealProvider } from "@/components/real/RealContext";
 import { RealMissionIntro } from "@/components/real/RealMissionIntro";
+import { useRealVoice } from "@/components/real/useRealVoice";
 import { RealCartScreen } from "@/components/real/screens/RealCartScreen";
 import { RealDineScreen } from "@/components/real/screens/RealDineScreen";
 import {
@@ -107,6 +108,7 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   const newTracker = () => new RealSessionTracker(setup.service, mission?.apiMissionId);
   const [initialTracker] = useState(newTracker);
   const tracker = useRef(initialTracker);
+  const voice = useRealVoice(tracker, voiceOpen);
   /** 메뉴·옵션 같은 나머지 행동 기록 (mock). 화면이 바뀔 때 모아서 보낸다 */
   const eventBuffer = useRef<SessionEvent[]>([]);
   const mainRef = useRef<HTMLElement>(null);
@@ -296,8 +298,13 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
       <VoiceAssistantSheet
         open={voiceOpen}
         onClose={() => setVoiceOpen(false)}
-        question={voiceSample(setup.service, screen).question}
-        answer={voiceSample(setup.service, screen).answer}
+        status={voice.status}
+        errorKind={voice.errorKind}
+        question={voice.question}
+        answer={voice.answer}
+        hint={voiceSample(setup.service, screen).question}
+        onMicClick={voice.onMicClick}
+        onRetry={voice.retry}
       />
       <Dialog
         open={quitOpen}

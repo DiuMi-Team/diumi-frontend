@@ -1,3 +1,5 @@
+import * as aiApi from "@/features/api/ai";
+import type { AiConnection, AiTurn } from "@/features/api/ai";
 import * as sessionApi from "@/features/api/session";
 import type { SessionEndStatus, SessionResult, StartedSession } from "@/features/api/session";
 import type { PracticeService } from "@/features/practice/types";
@@ -6,7 +8,10 @@ import { activeStepId, allStepIds, stepIdsBefore } from "@/features/real/steps";
 type SessionApi = Pick<
   typeof sessionApi,
   "startSession" | "endSession" | "completeStep" | "recordAction" | "getSessionResult"
->;
+> &
+  Pick<typeof aiApi, "startAiConnection" | "saveAiMessages">;
+
+const DEFAULT_API: SessionApi = { ...sessionApi, ...aiApi };
 
 /**
  * 실전 체험 세션 하나를 백엔드에 기록한다.
@@ -30,7 +35,7 @@ export class RealSessionTracker {
   constructor(
     private readonly service: PracticeService,
     private readonly missionId: number | undefined,
-    private readonly api: SessionApi = sessionApi,
+    private readonly api: SessionApi = DEFAULT_API,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -41,6 +46,25 @@ export class RealSessionTracker {
 
   get isEnded(): boolean {
     return this.ended !== null;
+  }
+
+  /** 지금 진행 중인 백엔드 단계 (모두 끝났으면 마지막 단계) */
+  get currentStepId(): number {
+    const all = allStepIds(this.service);
+    return activeStepId(this.service, this.completed) ?? all[all.length - 1];
+  }
+
+  /** AI 음성 연결용 임시 키를 받는다. 세션이 없거나 끝났거나 실패하면 null */
+  connectAi(): Promise<AiConnection | null> {
+    if (!this.started || this.ended) return Promise.resolve(null);
+    const stepId = this.currentStepId;
+    return this.enqueue((session) => this.api.startAiConnection(session, { stepId }));
+  }
+
+  /** 확정된 질문·답변을 저장한다. 세션이 끝난 뒤에도 저장할 수 있다 */
+  saveAiTurn(turn: AiTurn): void {
+    if (!this.started) return;
+    this.enqueue((session) => this.api.saveAiMessages(session, turn));
   }
 
   /** 한 번만 시작한다 */

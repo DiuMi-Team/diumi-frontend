@@ -4,8 +4,8 @@ import type { PracticeService } from "@/features/practice/types";
 type VoiceSample = { question: string; answer: string };
 
 /**
- * 음성 도우미 시트에 보여 줄 예시 질문·답변 (mock).
- * 음성 인식과 AI 답변은 API 연동 때 붙이고, 지금은 화면마다 정해진 예시만 보여 준다.
+ * 화면마다 어울리는 예시 질문·답변.
+ * 실전 AI 음성 도우미는 아직 묻지 않았을 때 질문을 "예) …"로 보여 준다.
  */
 export const VOICE_SAMPLES: Record<RealScreen, VoiceSample> = {
   intro: {

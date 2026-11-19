@@ -206,9 +206,14 @@ test("결제 방법에서 쿠폰·포인트는 준비 중이라고 알려 준다
   await expect(page.getByText("8 / 9")).toBeVisible();
 });
 
-test("음성 도우미는 패스트푸드에 맞는 예시를 보여 준다", async ({ page }) => {
-  await startMission(page);
+test("미션 확인 화면에는 음성 도우미가 없고, 미션을 시작하면 생긴다", async ({ page }) => {
+  await page.goto("/fastfood/real/mission");
+  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "음성 도우미" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
   await page.getByRole("button", { name: "음성 도우미" }).click();
   const sheet = page.getByRole("dialog", { name: "AI 음성 도우미" });
-  await expect(sheet).toContainText("매장에서 먹기를 누르면 돼요.");
+  // e2e는 백엔드에 연결되지 않으므로 연결 실패 안내가 나온다
+  await expect(sheet.getByRole("alert")).toContainText("지금은 AI 도우미에 연결할 수 없어요");
 });

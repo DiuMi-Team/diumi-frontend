@@ -230,13 +230,18 @@ test("이전으로는 직전 화면으로 돌아가고, 고른 내용은 그대�
   await expect(page).toHaveURL("/cafe/real");
 });
 
-test("음성 도우미 버튼을 누르면 도우미 화면이 열리고 닫힌다", async ({ page }) => {
+test("음성 도우미를 열면 AI에 연결하고, 연결할 수 없으면 안내와 다시 연결하기를 보여 준다", async ({
+  page,
+}) => {
+  // e2e는 백엔드에 연결되지 않으므로 연결 실패 안내가 나온다
   await startMission(page);
   await page.getByRole("button", { name: "음성 도우미" }).click();
   const sheet = page.getByRole("dialog", { name: "AI 음성 도우미" });
   await expect(sheet).toBeVisible();
-  await expect(sheet).toContainText("무엇이 궁금하세요?");
-  await expect(sheet).toContainText("포장해서 갈래요를 누르면 돼요.");
+  await expect(sheet.getByRole("alert")).toContainText("지금은 AI 도우미에 연결할 수 없어요");
+  await expect(sheet.getByRole("button", { name: "질문 말하기" })).toBeDisabled();
+  await sheet.getByRole("button", { name: "다시 연결하기" }).click();
+  await expect(sheet.getByRole("alert")).toContainText("지금은 AI 도우미에 연결할 수 없어요");
   await sheet.getByRole("button", { name: "닫기" }).click();
   await expect(sheet).toBeHidden();
 });

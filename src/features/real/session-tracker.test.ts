@@ -67,6 +67,19 @@ function fakeApi(options: { startFails?: boolean } = {}) {
         backCount: 1,
       });
     }),
+    startAiConnection: vi.fn(async (_s: unknown, input: { stepId: number }) => {
+      calls.push(`ai:connect:${input.stepId}`);
+      return later({
+        clientSecret: "ek_test",
+        expiresAt: "",
+        model: "gpt-realtime",
+        conversationId: "c",
+      });
+    }),
+    saveAiMessages: vi.fn(async (_s: unknown, turn: { stepId: number }) => {
+      calls.push(`ai:save:${turn.stepId}`);
+      return later({});
+    }),
   };
   return { api, calls };
 }
@@ -144,6 +157,34 @@ describe("RealSessionTracker", () => {
     tracker.enterProgress(3);
     await expect(tracker.complete()).resolves.toBeNull();
     expect(calls).toEqual(["start"]);
+  });
+
+  it("AI 연결은 지금 단계로 임시 키를 받고, 대화는 세션이 끝난 뒤에도 저장한다", async () => {
+    const { api, calls } = fakeApi();
+    const tracker = new RealSessionTracker("cafe", 101, api, clock().now);
+
+    await expect(tracker.connectAi()).resolves.toBeNull(); // 시작 전
+    tracker.start();
+    tracker.enterProgress(3); // 11 완료 → 지금 단계 12
+    await expect(tracker.connectAi()).resolves.toMatchObject({ clientSecret: "ek_test" });
+    const result = tracker.complete();
+    tracker.saveAiTurn({ stepId: 12, question: "q", answer: "a", responseTimeMs: 500 });
+    await result;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await expect(tracker.connectAi()).resolves.toBeNull(); // 끝난 뒤
+
+    expect(calls).toEqual([
+      "start",
+      "complete:11:0",
+      "ai:connect:12",
+      "complete:12:0",
+      "complete:13:0",
+      "complete:14:0",
+      "end:COMPLETED",
+      "result",
+      "ai:save:12",
+    ]);
+    expect(tracker.currentStepId).toBe(14);
   });
 
   it("중간 요청이 실패해도 다음 요청은 보낸다", async () => {

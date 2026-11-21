@@ -37,7 +37,7 @@ import { RealDoneScreen } from "@/components/real/screens/RealDoneScreen";
 import { RealPaymentMethodScreen } from "@/components/real/screens/RealPaymentMethodScreen";
 import { RealFreeResultScreen } from "@/components/real/screens/RealFreeResultScreen";
 import { RealResultScreen } from "@/components/real/screens/RealResultScreen";
-import { logEvents, type SessionEvent } from "@/features/api/session";
+import { logEvents, type SessionEvent, type SessionResult } from "@/features/api/session";
 import {
   EMPTY_ORDER,
   orderReducer,
@@ -88,7 +88,7 @@ const NEW_ORDER: OrderState = { ...EMPTY_ORDER, sizeMenu: "real" };
 /** 백엔드 결과에서 받은 소요 시간·도움 횟수. 받기 전이나 실패하면 프론트 값을 쓴다 */
 type ServerStats = { elapsedMs: number; helpCount: number };
 
-/** 서버 수행 결과를 이 시간까지 기다리고, 넘으면 프론트 판정으로 보여 준다 */
+/** 서버 수행 결과를 이 시간까지 기다리고, 넘으면 "불러오지 못했어요"를 보여 준다 */
 const RESULT_TIMEOUT_MS = 5_000;
 
 /**
@@ -111,7 +111,9 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [serverStats, setServerStats] = useState<ServerStats | null>(null);
-  const [serverJudgement, setServerJudgement] = useState<MissionJudgement | "pending" | null>(null);
+  const [serverJudgement, setServerJudgement] = useState<
+    MissionJudgement | "pending" | "failed" | null
+  >(null);
   const newTracker = () => new RealSessionTracker(setup.service, mission?.apiMissionId);
   const [initialTracker] = useState(newTracker);
   const tracker = useRef(initialTracker);
@@ -184,23 +186,22 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   };
 
   /**
-   * 결제까지 마친 세션을 끝내고 백엔드 수행 결과를 받는다.
-   * 결과 화면은 받는 동안 기다리고, 받으면 서버 판정·소요 시간·도움 횟수를 보여 준다.
-   * 결과를 못 받거나 오래 걸리면 프론트 판정(judge.ts)과 프론트 값으로 보여 준다.
+   * 백엔드 수행 결과를 기다린다. 받으면 서버 판정·소요 시간·도움 횟수를 보여 주고,
+   * 못 받거나 오래 걸리면 결과 화면이 "불러오지 못했어요"를 보여 준다(늦게 오면 그때 바꾼다).
+   * 프론트에서 따로 판정하지 않는다.
    */
-  const completeSession = () => {
+  const awaitResult = (request: Promise<SessionResult | null>) => {
     const current = tracker.current;
     if (mission) setServerJudgement("pending");
     const giveUp = setTimeout(() => {
       if (tracker.current === current) {
-        setServerJudgement((value) => (value === "pending" ? null : value));
+        setServerJudgement((value) => (value === "pending" ? "failed" : value));
       }
     }, RESULT_TIMEOUT_MS);
-    current
-      .complete()
+    request
       .then((result) => {
         if (tracker.current !== current) return;
-        setServerJudgement(result ? judgementFromServer(result) : null);
+        setServerJudgement((result && judgementFromServer(result)) ?? "failed");
         if (result) {
           setServerStats({
             elapsedMs: result.elapsedSeconds * 1000,
@@ -208,9 +209,15 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
           });
         }
       })
-      .catch(() => setServerJudgement(null))
+      .catch(() => setServerJudgement("failed"))
       .finally(() => clearTimeout(giveUp));
   };
+
+  /** 결제까지 마친 세션을 끝내고 수행 결과를 받는다 */
+  const completeSession = () => awaitResult(tracker.current.complete());
+
+  /** 결과를 못 불러왔을 때 다시 받는다 */
+  const retryResult = () => awaitResult(tracker.current.fetchResult());
 
   /** 다른 화면으로 간다. 화면만 바뀌는 버튼(담기 안 하고 주문하러 가기, 주문하기 등)은 행동으로 기록한다 */
   const go = (next: RealScreen) => {
@@ -337,6 +344,7 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
             restart,
             stats: serverStats ?? { elapsedMs: elapsedMs ?? 0, helpCount },
             serverJudgement,
+            retryResult,
             comingSoon: () => setComingSoonOpen(true),
           }}
         >

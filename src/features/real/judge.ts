@@ -1,23 +1,16 @@
 import type { SessionResult } from "@/features/api/session";
-import { getCafeMenu, SIZE_LABEL, TEMPERATURE_LABEL } from "@/features/cafe/catalog";
-import { getBurger, getSetDrink, getSide } from "@/features/fastfood/catalog";
-import {
-  itemName,
-  type BurgerItem,
-  type CartItem,
-  type DineOption,
-  type DrinkItem,
-  type OrderState,
-} from "@/features/order/order";
 import { CODE_LABELS } from "@/features/real/actions";
-import { PAYMENT_LABEL, realDrinkName } from "@/features/real/labels";
-import type { ExpectedItem, RealMission } from "@/features/real/missions";
+
+/**
+ * 실전 미션 결과 판정. 판정은 백엔드가 하고(GET /result), 여기서는 결과 화면에 맞게 바꾸기만 한다.
+ * 프론트에서 따로 판정하지 않는다. 서버 결과를 못 받으면 결과 화면이 "불러오지 못했어요"를 보여 준다.
+ */
 
 export type ConditionResult = {
   /** 완료 조건 문구. 예: "포장 선택" */
   label: string;
   ok: boolean;
-  /** 틀렸을 때 미션과 다른 점. 예: "사이즈: Extra를 골랐어요 → 미션은 Large" */
+  /** 틀렸을 때 미션과 다른 점. 예: "매장 식사를 골랐어요 (미션: 포장 선택)" */
   differences: string[];
 };
 
@@ -27,8 +20,6 @@ export type MissionJudgement = {
   percent: number;
   conditions: ConditionResult[];
 };
-
-const DINE_NAME: Record<DineOption, string> = { dineIn: "매장", takeout: "포장" };
 
 /**
  * 목적격 조사. 한글은 받침이 있으면 "을", 없으면 "를".
@@ -41,21 +32,6 @@ export function objectParticle(word: string): "을" | "를" {
   return /[lmnt]$/i.test(word.trim()) && !/(ar|ra|ge)$/i.test(word.trim()) ? "을" : "를";
 }
 
-const differ = (topic: string, picked: string, expected: string) =>
-  `${topic}: ${picked}${objectParticle(picked)} 골랐어요 → 미션은 ${expected}`;
-
-function itemLabel(item: CartItem): string {
-  return item.type === "drink"
-    ? `${realDrinkName(item)} ${item.quantity}잔`
-    : `${itemName(item)} ${item.quantity}개`;
-}
-
-/**
- * 결제를 마친 주문이 미션대로인지 판정한다. 완료 조건마다 맞았는지와, 틀렸다면 무엇이 달랐는지 돌려준다.
- * 조건 순서는 미션의 완료 조건 순서와 같다.
- * - 카페: 메뉴·온도 → 사이즈·수량 → 이용 방법 → 결제 방법
- * - 패스트푸드: 이용 방법 → 버거·구성·수량 → 사이드·음료 → 결제 방법
- */
 /**
  * 서버 문장 안의 백엔드 코드를 이름으로 바꾼다. 뒤에 붙은 목적격 조사도 이름에 맞춘다.
  * 예: "SIDE_NUGGETS를 골랐어요" → "치킨너겟을 골랐어요". 모르는 코드는 그대로 둔다.
@@ -68,11 +44,7 @@ export function readableDetail(detail: string): string {
   });
 }
 
-/**
- * 백엔드 수행 결과(GET /result)를 결과 화면 판정으로 바꾼다.
- * 결과 화면은 서버 판정을 먼저 쓰고, 서버 결과를 못 받으면 judgeMission(프론트 판정)으로 보여 준다.
- * 조건이 없으면(자유 체험 등) null.
- */
+/** 백엔드 수행 결과를 결과 화면 판정으로 바꾼다. 조건이 없으면(자유 체험 등) null */
 export function judgementFromServer(result: SessionResult): MissionJudgement | null {
   if (!result.conditions?.length) return null;
   const passed = result.conditions.filter((condition) => condition.passed).length;
@@ -88,124 +60,4 @@ export function judgementFromServer(result: SessionResult): MissionJudgement | n
           : [],
     })),
   };
-}
-
-export function judgeMission(mission: RealMission, order: OrderState): MissionJudgement {
-  const { item, dineOption, paymentMethod } = mission.expected;
-  const dine = judgeDine(order, dineOption);
-  const pay = judgePayment(order, paymentMethod);
-
-  const groups =
-    item.type === "drink"
-      ? [...judgeDrink(order, item), dine, pay]
-      : [dine, ...judgeBurger(order, item), pay];
-
-  const conditions = groups.map((differences, index) => ({
-    label: mission.conditions[index],
-    ok: differences.length === 0,
-    differences,
-  }));
-  const passed = conditions.filter((condition) => condition.ok).length;
-
-  return {
-    success: passed === conditions.length,
-    percent: Math.round((passed / conditions.length) * 100),
-    conditions,
-  };
-}
-
-function judgeDine(order: OrderState, expected: DineOption): string[] {
-  if (order.dineOption === expected) return [];
-  return [
-    order.dineOption
-      ? differ("이용 방법", DINE_NAME[order.dineOption], DINE_NAME[expected])
-      : `이용 방법을 고르지 않았어요 → 미션은 ${DINE_NAME[expected]}`,
-  ];
-}
-
-function judgePayment(order: OrderState, expected: OrderState["paymentMethod"]): string[] {
-  if (!expected || order.paymentMethod === expected) return [];
-  return [
-    order.paymentMethod
-      ? `결제: ${PAYMENT_LABEL[order.paymentMethod]}로 결제했어요 → 미션은 ${PAYMENT_LABEL[expected]}`
-      : `결제를 마치지 않았어요 → 미션은 ${PAYMENT_LABEL[expected]}`,
-  ];
-}
-
-/** 카페: [메뉴·온도, 사이즈·수량] */
-function judgeDrink(order: OrderState, target: Extract<ExpectedItem, { type: "drink" }>) {
-  const same = order.cart.filter(
-    (item): item is DrinkItem => item.type === "drink" && item.menuId === target.menuId,
-  );
-  const others = order.cart.filter((item) => !same.includes(item as DrinkItem));
-
-  const menu: string[] = [];
-  if (same.length === 0) {
-    menu.push(`메뉴: ${getCafeMenu(target.menuId).name}가 담기지 않았어요`);
-  } else {
-    const wrong = same.find((item) => item.temperature !== target.temperature);
-    if (wrong) {
-      menu.push(
-        differ("온도", TEMPERATURE_LABEL[wrong.temperature], TEMPERATURE_LABEL[target.temperature]),
-      );
-    }
-  }
-  if (others.length > 0) {
-    menu.push(`미션에 없는 메뉴도 담았어요: ${others.map(itemLabel).join(", ")}`);
-  }
-
-  const sizeQuantity: string[] = [];
-  const wrongSize = same.find((item) => item.size !== target.size);
-  if (wrongSize) {
-    sizeQuantity.push(differ("사이즈", SIZE_LABEL[wrongSize.size], SIZE_LABEL[target.size]));
-  }
-  const quantity = same.reduce((sum, item) => sum + item.quantity, 0);
-  if (same.length > 0 && quantity !== target.quantity) {
-    sizeQuantity.push(`수량: ${quantity}잔 → 미션은 ${target.quantity}잔`);
-  }
-
-  return [menu, sizeQuantity];
-}
-
-/** 패스트푸드: [버거·구성·수량, 사이드·음료] */
-function judgeBurger(order: OrderState, target: Extract<ExpectedItem, { type: "burger" }>) {
-  const same = order.cart.filter(
-    (item): item is BurgerItem => item.type === "burger" && item.menuId === target.menuId,
-  );
-  const others = order.cart.filter((item) => !same.includes(item as BurgerItem));
-  const setName = (set: boolean) => (set ? "세트" : "단품");
-
-  const menu: string[] = [];
-  if (same.length === 0) {
-    menu.push(`메뉴: ${getBurger(target.menuId).name}가 담기지 않았어요`);
-  } else {
-    const wrongSet = same.find((item) => item.set !== target.set);
-    if (wrongSet) menu.push(differ("구성", setName(wrongSet.set), setName(target.set)));
-    const quantity = same.reduce((sum, item) => sum + item.quantity, 0);
-    if (quantity !== target.quantity) {
-      menu.push(`수량: ${quantity}개 → 미션은 ${target.quantity}개`);
-    }
-  }
-  if (others.length > 0) {
-    menu.push(`미션에 없는 메뉴도 담았어요: ${others.map(itemLabel).join(", ")}`);
-  }
-
-  const sideDrink: string[] = [];
-  if (target.set && target.side && target.drink) {
-    const set = same.find((item) => item.set);
-    if (!set || !set.side || !set.drink) {
-      sideDrink.push(
-        `사이드·음료를 고르지 않았어요 → 미션은 ${getSide(target.side).name} · ${getSetDrink(target.drink).name}`,
-      );
-    } else {
-      if (set.side !== target.side) {
-        sideDrink.push(differ("사이드", getSide(set.side).name, getSide(target.side).name));
-      }
-      if (set.drink !== target.drink) {
-        sideDrink.push(differ("음료", getSetDrink(set.drink).name, getSetDrink(target.drink).name));
-      }
-    }
-  }
-
-  return [menu, sideDrink];
 }

@@ -9,20 +9,19 @@ import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
 import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
-import { judgeMission } from "@/features/real/judge";
 import { formatDuration, realOrderSummary } from "@/features/real/labels";
 
 /**
  * 미션 결과 (RCM14). 성공이면 "미션을 성공했어요!", 아니면 "주문은 완료됐어요"와 미션과 다른 점을 보여 준다.
  * 실패 화면은 디자인에 없어 성공 화면과 같은 틀에 주황색으로 만들었다 (빨강은 연습 예외 안내에만 쓴다).
- * 판정은 백엔드 수행 결과를 쓰고, 받는 동안은 잠깐 기다리며, 못 받으면 프론트 판정으로 보여 준다.
+ * 판정은 백엔드 수행 결과만 쓴다. 받는 동안은 잠깐 기다리고, 못 받으면 "불러오지 못했어요"를 보여 준다.
  */
 export function RealResultScreen() {
   const { setup, order, stats, restart, serverJudgement } = useReal();
-  const mission = setup.mission;
-  if (!mission) throw new Error("미션 결과 화면은 미션 수행에서만 보여 줘요");
-  if (serverJudgement === "pending") return <ResultPending />;
-  const judgement = serverJudgement ?? judgeMission(mission, order);
+  if (!setup.mission) throw new Error("미션 결과 화면은 미션 수행에서만 보여 줘요");
+  if (serverJudgement === "pending" || serverJudgement === null) return <ResultPending />;
+  if (serverJudgement === "failed") return <ResultFailed />;
+  const judgement = serverJudgement;
   const { success, percent } = judgement;
   const differences = judgement.conditions.flatMap((condition) => condition.differences);
 
@@ -137,6 +136,53 @@ function ResultPending() {
       <p className="text-24 leading-[1.3] font-bold">결과를 확인하고 있어요</p>
       <p className="text-18 text-text-sub">잠시만 기다려 주세요</p>
     </div>
+  );
+}
+
+/**
+ * 서버 수행 결과를 받지 못했을 때. 주문(결제)은 끝났으니 그 사실을 먼저 알리고, 다시 불러오게 한다.
+ * 디자인에 없어 결과 화면 머리 모양과 주황색(실패 화면 색)을 빌렸다.
+ */
+function ResultFailed() {
+  const { setup, order, restart, retryResult } = useReal();
+  return (
+    <>
+      <div role="alert" className="flex flex-col items-center gap-3 text-center short:gap-1.5">
+        <span className="flex size-24 items-center justify-center rounded-full bg-orange-light text-orange short:size-16 short:[&>svg]:size-10">
+          <ClockIcon size={56} />
+        </span>
+        <h1 className="text-28 leading-[1.3] font-bold short:text-24">결과를 불러오지 못했어요</h1>
+        <p className="text-18 leading-normal text-text-sub">
+          주문은 완료됐어요.
+          <br />
+          잠시 후 다시 불러와 주세요.
+        </p>
+      </div>
+
+      <section
+        aria-label="완료한 주문"
+        className="flex flex-col gap-1.5 rounded-3xl border-2 border-gray-1 px-5 py-4 short:py-3"
+      >
+        <b className="text-18">완료한 주문</b>
+        <p className="text-17 leading-[1.45]">{realOrderSummary(order)}</p>
+        <b className="text-17 text-primary">
+          {KIOSK_COPY[setup.service].numberLabel} {setup.orderNumber}
+        </b>
+      </section>
+
+      <Spacer />
+      <RealBottomBar>
+        <button type="button" onClick={retryResult} className={REAL_PRIMARY_CLASS}>
+          결과 다시 불러오기
+        </button>
+        <button type="button" onClick={restart} className={REAL_OUTLINE_CLASS}>
+          다시 도전하기
+        </button>
+        <Link href="/" className={REAL_OUTLINE_CLASS}>
+          처음으로
+        </Link>
+      </RealBottomBar>
+    </>
   );
 }
 

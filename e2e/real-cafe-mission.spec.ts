@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockBackend } from "./mock-backend";
 
 const main = (page: Page) => page.locator("main");
 
@@ -27,9 +28,20 @@ test("실전 유형 선택에서 미션 수행하기로 들어간다", async ({ 
   await expect(conditions).toContainText("카드 결제 완료");
 });
 
+const CAFE_CONDITIONS = [
+  "아이스 아메리카노 선택",
+  "Large 사이즈 · 수량 2잔",
+  "포장 선택",
+  "카드 결제 완료",
+];
+
 test("강조 없이 스스로 아이스 아메리카노 Large 2잔을 포장·카드로 주문하고 미션에 성공한다", async ({
   page,
 }) => {
+  const backend = await mockBackend(page, {
+    isSuccess: true,
+    conditions: CAFE_CONDITIONS.map((condition) => ({ condition, passed: true })),
+  });
   await startMission(page);
   await expect(page.getByText("미션: 아이스 아메리카노 2잔 · 포장 · 카드")).toBeVisible();
   await expect(page.locator("[data-practice-target]")).toHaveCount(0);
@@ -91,11 +103,41 @@ test("강조 없이 스스로 아이스 아메리카노 Large 2잔을 포장·�
     "100",
   );
   await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("도움 요청0회");
-  await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("초");
+  // 소요 시간은 서버 결과(42초)를 쓴다
+  await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("42초");
   await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
     "아이스 아메리카노 Large 2잔 · 포장 · 카드 결제",
   );
   await expect(page.getByRole("region", { name: "미션과 다른 점" })).toHaveCount(0);
+
+  // 백엔드에 보낸 행동: 장바구니에서 주문할 때 items를 함께 보낸다
+  const order = backend.actions.find((action) => action.target_code === "BUTTON_ORDER");
+  expect(order).toMatchObject({
+    step_id: 15,
+    action_data: {
+      items: [{ menu: "MENU_AMERICANO", temperature: "TEMP_ICE", size: "SIZE_LARGE", quantity: 2 }],
+    },
+  });
+  expect(backend.actions.at(-1)).toMatchObject({ step_id: 19, target_code: "BUTTON_DONE" });
+});
+
+test("결과를 불러오지 못하면 주문은 완료됐다고 알리고 다시 불러올 수 있다", async ({ page }) => {
+  // 백엔드에 연결되지 않는 e2e 환경 그대로 진행한다
+  await startMission(page);
+  await addIcedAmericano(page);
+  await goToPayment(page);
+  await page.getByRole("button", { name: "신용·체크카드" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+  await page.getByRole("button", { name: "결제 완료 확인" }).click();
+
+  await expect(page.getByRole("heading", { name: "결과를 불러오지 못했어요" })).toBeVisible();
+  await expect(main(page).getByRole("alert")).toContainText("주문은 완료됐어요");
+  await expect(page.getByRole("heading", { name: "미션을 성공했어요!" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText("포장");
+  await page.getByRole("button", { name: "결과 다시 불러오기" }).click();
+  await expect(page.getByRole("heading", { name: "결과를 불러오지 못했어요" })).toBeVisible();
+  await page.getByRole("button", { name: "다시 도전하기" }).click();
+  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
 });
 
 /** 메뉴를 담고 결제 직전(결제 방식 선택)까지 간다 */
@@ -106,7 +148,19 @@ async function goToPayment(page: Page) {
   await expect(page.getByText("7 / 9")).toBeVisible();
 }
 
-test("미션과 다르게 주문하면 주문은 완료되고, 다른 점과 결과를 보여 준다", async ({ page }) => {
+test("미션과 다르게 주문하면 주문은 완료되고, 서버 판정의 다른 점과 결과를 보여 준다", async ({
+  page,
+}) => {
+  await mockBackend(page, {
+    isSuccess: false,
+    aiHelpCount: 1,
+    conditions: [
+      { condition: CAFE_CONDITIONS[0], passed: true },
+      { condition: CAFE_CONDITIONS[1], passed: false, detail: "SIZE_EXTRA를 골랐어요" },
+      { condition: CAFE_CONDITIONS[2], passed: true },
+      { condition: CAFE_CONDITIONS[3], passed: false, detail: "모바일페이를 골랐어요" },
+    ],
+  });
   await startMission(page);
   await page.getByRole("button", { name: "음성 도우미" }).click();
   await page
@@ -135,8 +189,9 @@ test("미션과 다르게 주문하면 주문은 완료되고, 다른 점과 결
   );
   await expect(page.getByRole("region", { name: "미션 수행 결과" })).toContainText("도움 요청1회");
   const differences = page.getByRole("region", { name: "미션과 다른 점" });
-  await expect(differences).toContainText("사이즈: Extra를 골랐어요 → 미션은 Large");
-  await expect(differences).toContainText("결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드");
+  // 서버 문장의 코드(SIZE_EXTRA)는 이름으로 바꿔 보여 준다
+  await expect(differences).toContainText("Extra를 골랐어요 (미션: Large 사이즈 · 수량 2잔)");
+  await expect(differences).toContainText("모바일페이를 골랐어요 (미션: 카드 결제 완료)");
   await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
     "아이스 아메리카노 Extra 2잔 · 포장 · 모바일페이 결제",
   );

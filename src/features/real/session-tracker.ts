@@ -116,6 +116,12 @@ export class RealSessionTracker {
     return this.enqueue((session) => this.api.getSessionResult(session));
   }
 
+  /** 끝낸 세션의 수행 결과를 다시 받는다 (결과를 못 불러왔을 때 다시 불러오기) */
+  fetchResult(): Promise<SessionResult | null> {
+    if (this.ended !== "COMPLETED") return Promise.resolve(null);
+    return this.enqueue((session) => this.api.getSessionResult(session));
+  }
+
   /**
    * 중간에 그만뒀다. 순서를 기다릴 필요가 없어 바로 보낸다 (탭을 닫을 때는 keepalive).
    * 결제를 마친 뒤 떠난 경우(결제 완료 화면에서 나감)는 완료로 끝낸다.

@@ -1,3 +1,4 @@
+import type { SessionResult } from "@/features/api/session";
 import { getCafeMenu, SIZE_LABEL, TEMPERATURE_LABEL } from "@/features/cafe/catalog";
 import { getBurger, getSetDrink, getSide } from "@/features/fastfood/catalog";
 import {
@@ -8,6 +9,7 @@ import {
   type DrinkItem,
   type OrderState,
 } from "@/features/order/order";
+import { CODE_LABELS } from "@/features/real/actions";
 import { PAYMENT_LABEL, realDrinkName } from "@/features/real/labels";
 import type { ExpectedItem, RealMission } from "@/features/real/missions";
 
@@ -54,6 +56,40 @@ function itemLabel(item: CartItem): string {
  * - 카페: 메뉴·온도 → 사이즈·수량 → 이용 방법 → 결제 방법
  * - 패스트푸드: 이용 방법 → 버거·구성·수량 → 사이드·음료 → 결제 방법
  */
+/**
+ * 서버 문장 안의 백엔드 코드를 이름으로 바꾼다. 뒤에 붙은 목적격 조사도 이름에 맞춘다.
+ * 예: "SIDE_NUGGETS를 골랐어요" → "치킨너겟을 골랐어요". 모르는 코드는 그대로 둔다.
+ */
+export function readableDetail(detail: string): string {
+  return detail.replace(/\b([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)(을|를)?/g, (match, code, particle) => {
+    const label = CODE_LABELS[code];
+    if (!label) return match;
+    return particle ? `${label}${objectParticle(label)}` : label;
+  });
+}
+
+/**
+ * 백엔드 수행 결과(GET /result)를 결과 화면 판정으로 바꾼다.
+ * 결과 화면은 서버 판정을 먼저 쓰고, 서버 결과를 못 받으면 judgeMission(프론트 판정)으로 보여 준다.
+ * 조건이 없으면(자유 체험 등) null.
+ */
+export function judgementFromServer(result: SessionResult): MissionJudgement | null {
+  if (!result.conditions?.length) return null;
+  const passed = result.conditions.filter((condition) => condition.passed).length;
+  return {
+    success: result.isSuccess === true,
+    percent: result.conditionPassRate ?? Math.round((passed / result.conditions.length) * 100),
+    conditions: result.conditions.map((condition) => ({
+      label: condition.condition,
+      ok: condition.passed,
+      differences:
+        !condition.passed && condition.detail
+          ? [`${readableDetail(condition.detail)} (미션: ${condition.condition})`]
+          : [],
+    })),
+  };
+}
+
 export function judgeMission(mission: RealMission, order: OrderState): MissionJudgement {
   const { item, dineOption, paymentMethod } = mission.expected;
   const dine = judgeDine(order, dineOption);

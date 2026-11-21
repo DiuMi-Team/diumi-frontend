@@ -15,12 +15,14 @@ import { formatDuration, realOrderSummary } from "@/features/real/labels";
 /**
  * 미션 결과 (RCM14). 성공이면 "미션을 성공했어요!", 아니면 "주문은 완료됐어요"와 미션과 다른 점을 보여 준다.
  * 실패 화면은 디자인에 없어 성공 화면과 같은 틀에 주황색으로 만들었다 (빨강은 연습 예외 안내에만 쓴다).
+ * 판정은 백엔드 수행 결과를 쓰고, 받는 동안은 잠깐 기다리며, 못 받으면 프론트 판정으로 보여 준다.
  */
 export function RealResultScreen() {
-  const { setup, order, stats, restart } = useReal();
+  const { setup, order, stats, restart, serverJudgement } = useReal();
   const mission = setup.mission;
   if (!mission) throw new Error("미션 결과 화면은 미션 수행에서만 보여 줘요");
-  const judgement = judgeMission(mission, order);
+  if (serverJudgement === "pending") return <ResultPending />;
+  const judgement = serverJudgement ?? judgeMission(mission, order);
   const { success, percent } = judgement;
   const differences = judgement.conditions.flatMap((condition) => condition.differences);
 
@@ -119,6 +121,22 @@ export function RealResultScreen() {
         </Link>
       </RealBottomBar>
     </>
+  );
+}
+
+/** 서버 수행 결과를 받는 동안 (보통 1초 안팎). 디자인에 없어 결과 화면 머리 모양을 빌렸다 */
+function ResultPending() {
+  return (
+    <div
+      role="status"
+      className="flex flex-1 flex-col items-center justify-center gap-3 text-center"
+    >
+      <span className="flex size-24 items-center justify-center rounded-full bg-gray-1 text-primary short:size-16 short:[&>svg]:size-10">
+        <ClockIcon size={56} />
+      </span>
+      <p className="text-24 leading-[1.3] font-bold">결과를 확인하고 있어요</p>
+      <p className="text-18 text-text-sub">잠시만 기다려 주세요</p>
+    </div>
   );
 }
 

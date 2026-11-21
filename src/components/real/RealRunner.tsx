@@ -46,6 +46,9 @@ import {
 } from "@/features/order/order";
 import { FINISHED_SCREENS, realProgress, type RealScreen } from "@/features/real/flow";
 import type { RealSetup } from "@/features/real/missions";
+import { actionForMove, actionForOrder, type BackendAction } from "@/features/real/actions";
+import { screenCode } from "@/features/real/screen-codes";
+import { judgementFromServer, type MissionJudgement } from "@/features/real/judge";
 import { RealSessionTracker } from "@/features/real/session-tracker";
 import { voiceSample } from "@/features/real/voice";
 
@@ -85,6 +88,9 @@ const NEW_ORDER: OrderState = { ...EMPTY_ORDER, sizeMenu: "real" };
 /** 백엔드 결과에서 받은 소요 시간·도움 횟수. 받기 전이나 실패하면 프론트 값을 쓴다 */
 type ServerStats = { elapsedMs: number; helpCount: number };
 
+/** 서버 수행 결과를 이 시간까지 기다리고, 넘으면 프론트 판정으로 보여 준다 */
+const RESULT_TIMEOUT_MS = 5_000;
+
 /**
  * 실전모드. 강조·정답 없이 스스로 주문한다.
  * - 미션 수행 (RCM00~14): 미션 확인 → 주문 → 결제 → 결제 완료 → 판정 결과
@@ -105,14 +111,15 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [serverStats, setServerStats] = useState<ServerStats | null>(null);
+  const [serverJudgement, setServerJudgement] = useState<MissionJudgement | "pending" | null>(null);
   const newTracker = () => new RealSessionTracker(setup.service, mission?.apiMissionId);
   const [initialTracker] = useState(newTracker);
   const tracker = useRef(initialTracker);
-  const voice = useRealVoice(tracker, voiceOpen);
   /** 메뉴·옵션 같은 나머지 행동 기록 (mock). 화면이 바뀔 때 모아서 보낸다 */
   const eventBuffer = useRef<SessionEvent[]>([]);
   const mainRef = useRef<HTMLElement>(null);
   const screen = history[history.length - 1];
+  const voice = useRealVoice(tracker, voiceOpen, screenCode(setup.service, screen, order));
 
   const abandonTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -165,7 +172,53 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, history.length]);
 
-  const go = (next: RealScreen) => setHistory((items) => [...items, next]);
+  /** 지금 화면의 진행 단계(1~9). 미션 확인·결과 화면은 단계가 없다 */
+  const currentProgress =
+    screen === "intro" || screen === "result"
+      ? null
+      : realProgress(screen, order, setup.service).step;
+
+  /** 백엔드에 행동을 기록한다. 행동이 일어난 지금 화면의 단계로 보낸다 */
+  const track = (action: BackendAction | null) => {
+    if (action && currentProgress !== null) tracker.current.record(currentProgress, action);
+  };
+
+  /**
+   * 결제까지 마친 세션을 끝내고 백엔드 수행 결과를 받는다.
+   * 결과 화면은 받는 동안 기다리고, 받으면 서버 판정·소요 시간·도움 횟수를 보여 준다.
+   * 결과를 못 받거나 오래 걸리면 프론트 판정(judge.ts)과 프론트 값으로 보여 준다.
+   */
+  const completeSession = () => {
+    const current = tracker.current;
+    if (mission) setServerJudgement("pending");
+    const giveUp = setTimeout(() => {
+      if (tracker.current === current) {
+        setServerJudgement((value) => (value === "pending" ? null : value));
+      }
+    }, RESULT_TIMEOUT_MS);
+    current
+      .complete()
+      .then((result) => {
+        if (tracker.current !== current) return;
+        setServerJudgement(result ? judgementFromServer(result) : null);
+        if (result) {
+          setServerStats({
+            elapsedMs: result.elapsedSeconds * 1000,
+            helpCount: result.aiHelpCount,
+          });
+        }
+      })
+      .catch(() => setServerJudgement(null))
+      .finally(() => clearTimeout(giveUp));
+  };
+
+  /** 다른 화면으로 간다. 화면만 바뀌는 버튼(담기 안 하고 주문하러 가기, 주문하기 등)은 행동으로 기록한다 */
+  const go = (next: RealScreen) => {
+    track(actionForMove(setup.service, screen, next, order));
+    /* 미션 수행은 결제 완료 화면의 확인 버튼(BUTTON_DONE)까지 기록한 뒤 끝낸다 */
+    if (screen === "done" && next === "result") completeSession();
+    setHistory((items) => [...items, next]);
+  };
 
   /* 자유 체험은 미션 확인 없이 바로 시작한다 (한 번만 시작된다) */
   useEffect(() => {
@@ -185,36 +238,35 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
 
   /** 사용자가 "이전으로"를 눌렀다. 실전 유형 선택으로 나가는 게 아니면 뒤로 가기로 기록한다 */
   const userBack = () => {
-    if (history.length > 1) tracker.current.recordAction("BACK");
+    if (history.length > 1) track({ actionType: "BACK" });
     back();
   };
 
+  /* 도움 요청 횟수는 백엔드가 AI 연결 횟수로 센다. AI_HELP 행동을 따로 보내면 두 번 세진다 */
   const openVoice = () => {
     record("help_open");
-    tracker.current.recordAction("AI_HELP");
     setHelpCount((count) => count + 1);
     setVoiceOpen(true);
   };
 
   /**
-   * 결제를 마친다. 걸린 시간을 재고 세션을 끝낸다.
-   * 미션 수행은 결제 완료 화면을 거쳐 판정 결과로, 자유 체험은 바로 체험 완료 화면으로 간다.
+   * 결제를 마친다. 걸린 시간을 재고 결제(PAY)를 기록한다.
+   * 미션 수행은 결제 완료 화면에서 확인을 누를 때 세션을 끝내고 판정 결과로 간다.
+   * 자유 체험은 결제 완료 화면 없이 바로 끝내고 체험 완료 화면으로 간다.
    */
   const finishPayment = (target: string) => {
     record("tap", target);
-    const paid = orderReducer(order, { type: "completePayment" });
+    track(actionForOrder({ type: "completePayment" }, order));
     const current = tracker.current;
-    setOrder(paid);
+    current.markPaid();
+    setOrder(orderReducer(order, { type: "completePayment" }));
     setElapsedMs(Date.now() - current.startedAt);
-    /* 소요 시간·도움 횟수는 백엔드 결과로 바꿔 보여 준다. 성공·실패와 다른 점은 아직 프론트 판정(judge.ts) */
-    current
-      .complete()
-      .then((result) => {
-        if (!result || tracker.current !== current) return;
-        setServerStats({ elapsedMs: result.elapsedSeconds * 1000, helpCount: result.aiHelpCount });
-      })
-      .catch(() => {});
-    go(mission ? "done" : "result");
+    if (mission) {
+      go("done");
+    } else {
+      completeSession();
+      setHistory((items) => [...items, "result"]);
+    }
   };
 
   /** 다시 도전하기·한 번 더 체험: 처음 상태로 되돌린다 (자유 체험은 새 세션이 바로 시작된다) */
@@ -226,11 +278,13 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
     setHelpCount(0);
     setElapsedMs(null);
     setServerStats(null);
+    setServerJudgement(null);
     setHistory([firstScreen]);
   };
 
   const act = (action: OrderAction, target: string) => {
     record("tap", target);
+    track(actionForOrder(action, order));
     setOrder((current) => orderReducer(current, action));
   };
 
@@ -282,6 +336,7 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
             finishPayment,
             restart,
             stats: serverStats ?? { elapsedMs: elapsedMs ?? 0, helpCount },
+            serverJudgement,
             comingSoon: () => setComingSoonOpen(true),
           }}
         >

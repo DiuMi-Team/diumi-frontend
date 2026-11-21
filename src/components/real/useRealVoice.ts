@@ -24,7 +24,16 @@ const LISTEN_TIMEOUT_MS = 10_000;
  * - 질문·답변이 확정되면 백엔드에 저장
  * - 닫거나 화면을 떠나면 연결 종료
  */
-export function useRealVoice(tracker: RefObject<RealSessionTracker>, open: boolean) {
+export function useRealVoice(
+  tracker: RefObject<RealSessionTracker>,
+  open: boolean,
+  /** 연결할 때의 화면 코드. 시트가 열려 있는 동안은 화면이 바뀌지 않는다 */
+  screenCode: string,
+) {
+  const screenCodeRef = useRef(screenCode);
+  useEffect(() => {
+    screenCodeRef.current = screenCode;
+  }, [screenCode]);
   const [view, setView] = useState<VoiceView>(() => new VoiceConversation().snapshot);
   const [attempt, setAttempt] = useState(0);
   const conversation = useRef<VoiceConversation | null>(null);
@@ -42,7 +51,7 @@ export function useRealVoice(tracker: RefObject<RealSessionTracker>, open: boole
     sync();
 
     const connect = async () => {
-      const connection = await tracker.current.connectAi();
+      const connection = await tracker.current.connectAi(screenCodeRef.current);
       if (cancelled) return;
       if (!connection) {
         current.fail("unavailable");

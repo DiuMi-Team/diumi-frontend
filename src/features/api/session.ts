@@ -110,38 +110,64 @@ export function completeStep(
   });
 }
 
-/** 백엔드 행동 유형. 지금은 action_data가 필요 없는 AI_HELP·BACK만 보낸다 */
-export type ActionType = "AI_HELP" | "BACK";
+/**
+ * 백엔드 행동 유형. 코드는 features/real/actions.ts가 만든다.
+ * AI_HELP는 백엔드가 AI 연결 횟수로 도움 요청을 세므로 보내지 않는다(보내면 두 번 세진다).
+ */
+export type ActionType = "SELECT" | "OPTION" | "QUANTITY" | "NEXT" | "PAY" | "BACK" | "HOME";
 
 /** 백엔드는 occurred_at을 KST 오프셋이 붙은 ISO 8601로 받는다. 예: 2026-11-19T17:29:06.824+09:00 */
 export function toKstIsoString(ms: number): string {
   return new Date(ms + 9 * 60 * 60 * 1000).toISOString().replace("Z", "+09:00");
 }
 
-export function recordAction(
-  session: SessionRef,
-  action: { stepId: number; actionType: ActionType; occurredAt: number },
-): Promise<unknown> {
+export type RecordActionInput = {
+  stepId: number;
+  actionType: ActionType;
+  /** 대문자 코드. 예: MENU_AMERICANO, TEMP_ICE, BUTTON_ORDER */
+  targetCode?: string;
+  /** 예: {"quantity": 2}, {"items": [...]} */
+  actionData?: Record<string, unknown>;
+  occurredAt: number;
+};
+
+/** 행동 기록. 실전 미션은 맞다·틀리다(is_valid)를 돌려준다. BACK·HOME은 판정하지 않는다(null) */
+export function recordAction(session: SessionRef, action: RecordActionInput): Promise<unknown> {
   return apiRequest(`/sessions/${session.sessionId}/actions`, {
     method: "POST",
     visitorId: session.visitorId,
     body: {
       stepId: action.stepId,
       actionType: action.actionType,
+      targetCode: action.targetCode,
+      actionData: action.actionData,
       occurredAt: toKstIsoString(action.occurredAt),
     },
   });
 }
 
+/** 실전 미션 완료 조건 하나의 판정. 예: {condition: "포장 선택", passed: false, detail: "매장 식사를 골랐어요"} */
+export type ResultCondition = {
+  code: string;
+  condition: string;
+  passed: boolean;
+  /** 틀렸을 때 고른 것. 맞으면 null */
+  detail: string | null;
+};
+
 export type SessionResult = {
   sessionId: string;
-  /** 자유 체험은 null */
+  /** 9단계 모두 맞는 행동을 했고 완료 조건도 모두 맞으면 true. 자유 체험은 null */
   isSuccess: boolean | null;
   /** 세션 시작부터 종료까지 걸린 시간(초) */
   elapsedSeconds: number;
   aiHelpCount: number;
   errorCount: number | null;
   backCount: number;
+  /** 실전 미션 완료 조건별 결과. 자유 체험은 없다 */
+  conditions?: ResultCondition[];
+  /** 맞힌 완료 조건 비율 (0~100) */
+  conditionPassRate?: number | null;
 };
 
 /** 수행 결과. COMPLETED로 끝난 세션만 있고, 아니면 404(RESULT_NOT_FOUND)다 */

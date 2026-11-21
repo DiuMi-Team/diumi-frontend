@@ -19,8 +19,9 @@ export type AiConnection = {
 };
 
 /**
- * screen_code는 백엔드가 정한 화면 코드만 받는다(목록 확인 전이라 보내지 않는다).
- * 화면 이름(예: "menu")을 보내면 400 INVALID_REQUEST다.
+ * screen_code는 백엔드가 정한 화면 코드만 받는다(features/real/screen-codes.ts).
+ * 목록 밖의 값(예: "menu", "PAYMENT")을 보내면 400 INVALID_REQUEST다.
+ * 백엔드는 연결 횟수를 도움 요청 횟수(ai_help_count)로 센다.
  */
 export function startAiConnection(
   session: SessionRef,

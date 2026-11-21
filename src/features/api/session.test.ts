@@ -134,21 +134,29 @@ describe("단계 완료·행동 기록·결과", () => {
     expect(call(fetchMock, 0).body).toEqual({ elapsed_ms: 1235 });
   });
 
-  it("행동은 KST 오프셋이 붙은 occurred_at으로 보낸다", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json(201, { action_id: 1, is_valid: null }));
+  it("행동은 대문자 코드·action_data와 KST 오프셋이 붙은 occurred_at으로 보낸다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(201, { action_id: 1, is_valid: true }));
     vi.stubGlobal("fetch", fetchMock);
     const { recordAction } = await import("@/features/api/session");
 
     await recordAction(session, {
-      stepId: 12,
-      actionType: "AI_HELP",
+      stepId: 27,
+      actionType: "NEXT",
+      targetCode: "BUTTON_ORDER",
+      actionData: {
+        items: [{ menu: "MENU_BULGOGI_BURGER", mealType: "MEAL_SET", side: "SIDE_FRIES" }],
+      },
       occurredAt: Date.UTC(2026, 10, 19, 8, 29, 6, 824),
     });
 
     expect(call(fetchMock, 0).url).toBe("/api/v1/sessions/session-1/actions");
     expect(call(fetchMock, 0).body).toEqual({
-      step_id: 12,
-      action_type: "AI_HELP",
+      step_id: 27,
+      action_type: "NEXT",
+      target_code: "BUTTON_ORDER",
+      action_data: {
+        items: [{ menu: "MENU_BULGOGI_BURGER", meal_type: "MEAL_SET", side: "SIDE_FRIES" }],
+      },
       occurred_at: "2026-11-19T17:29:06.824+09:00",
     });
   });
@@ -156,9 +164,16 @@ describe("단계 완료·행동 기록·결과", () => {
   it("수행 결과를 camelCase로 돌려준다", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        json(200, { session_id: "session-1", elapsed_seconds: 83, ai_help_count: 2, back_count: 1 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          json(200, {
+            session_id: "session-1",
+            elapsed_seconds: 83,
+            ai_help_count: 2,
+            back_count: 1,
+          }),
+        ),
     );
     const { getSessionResult } = await import("@/features/api/session");
 
@@ -174,7 +189,9 @@ describe("logEvents (mock)", () => {
   it("세션별로 행동을 모아 둔다", async () => {
     const { getMockEvents, logEvents } = await import("@/features/api/session");
     await logEvents("s", [{ type: "screen_view", screen: "dine", elapsedMs: 0 }]);
-    await logEvents("s", [{ type: "tap", screen: "dine", target: "dine:takeout", elapsedMs: 1200 }]);
+    await logEvents("s", [
+      { type: "tap", screen: "dine", target: "dine:takeout", elapsedMs: 1200 },
+    ]);
     expect(getMockEvents("s")).toMatchObject([{ type: "screen_view" }, { target: "dine:takeout" }]);
   });
 });

@@ -1,36 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
 import type { StartedSession } from "@/features/api/session";
 import { RealSessionTracker } from "@/features/real/session-tracker";
-import { activeStepId, allStepIds, stepIdsBefore } from "@/features/real/steps";
+import { activeStepId, allStepIds, stepIdForProgress, stepIdsBefore } from "@/features/real/steps";
 
-describe("화면 진행 단계 → 백엔드 단계", () => {
-  it("카페는 4단계로 묶는다", () => {
-    expect(allStepIds("cafe")).toEqual([11, 12, 13, 14]);
-    expect(stepIdsBefore("cafe", 2)).toEqual([]);
-    expect(stepIdsBefore("cafe", 3)).toEqual([11]);
-    expect(stepIdsBefore("cafe", 4)).toEqual([11, 12]);
-    expect(stepIdsBefore("cafe", 6)).toEqual([11, 12]);
-    expect(stepIdsBefore("cafe", 7)).toEqual([11, 12, 13]);
+describe("화면 진행 단계 → 백엔드 단계 (9단계 1:1)", () => {
+  it("카페는 11~19, 패스트푸드는 21~29다", () => {
+    expect(allStepIds("cafe")).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(allStepIds("fastfood")).toEqual([21, 22, 23, 24, 25, 26, 27, 28, 29]);
+    expect(stepIdForProgress("cafe", 5)).toBe(15);
+    expect(stepIdForProgress("fastfood", 8)).toBe(28);
   });
 
-  it("패스트푸드 사이드·음료 화면을 벗어나면 사이드·음료 단계를 함께 끝낸다", () => {
-    expect(allStepIds("fastfood")).toEqual([21, 22, 23, 24, 25, 26]);
-    expect(stepIdsBefore("fastfood", 4)).toEqual([21, 22]);
-    expect(stepIdsBefore("fastfood", 5)).toEqual([21, 22, 23, 24]);
-    expect(stepIdsBefore("fastfood", 8)).toEqual([21, 22, 23, 24, 25]);
+  it("진행 단계에 들어오면 앞 단계들을 지나온 것으로 본다", () => {
+    expect(stepIdsBefore("cafe", 1)).toEqual([]);
+    expect(stepIdsBefore("cafe", 3)).toEqual([11, 12]);
+    expect(stepIdsBefore("fastfood", 9)).toEqual([21, 22, 23, 24, 25, 26, 27, 28]);
   });
 
   it("아직 완료하지 않은 첫 단계를 현재 단계로 본다", () => {
     expect(activeStepId("cafe", new Set())).toBe(11);
     expect(activeStepId("cafe", new Set([11, 13]))).toBe(12);
-    expect(activeStepId("cafe", new Set([11, 12, 13, 14]))).toBeNull();
+    expect(activeStepId("cafe", new Set(allStepIds("cafe")))).toBeNull();
   });
 });
 
 const SESSION: StartedSession = {
   sessionId: "s-1",
   visitorId: "v-1",
-  totalSteps: 4,
+  totalSteps: 9,
   currentStep: null,
 };
 
@@ -48,10 +45,12 @@ function fakeApi(options: { startFails?: boolean } = {}) {
       calls.push(`complete:${stepId}:${elapsedMs}`);
       return later({} as never);
     }),
-    recordAction: vi.fn(async (_s: unknown, action: { stepId: number; actionType: string }) => {
-      calls.push(`action:${action.actionType}:${action.stepId}`);
-      return later({});
-    }),
+    recordAction: vi.fn(
+      async (_s: unknown, action: { stepId: number; actionType: string; targetCode?: string }) => {
+        calls.push(`action:${action.actionType}:${action.targetCode ?? "-"}:${action.stepId}`);
+        return later({});
+      },
+    ),
     endSession: vi.fn(async (_s: unknown, status: string) => {
       calls.push(`end:${status}`);
       return later({} as never);
@@ -67,15 +66,17 @@ function fakeApi(options: { startFails?: boolean } = {}) {
         backCount: 1,
       });
     }),
-    startAiConnection: vi.fn(async (_s: unknown, input: { stepId: number }) => {
-      calls.push(`ai:connect:${input.stepId}`);
-      return later({
-        clientSecret: "ek_test",
-        expiresAt: "",
-        model: "gpt-realtime",
-        conversationId: "c",
-      });
-    }),
+    startAiConnection: vi.fn(
+      async (_s: unknown, input: { stepId: number; screenCode?: string }) => {
+        calls.push(`ai:connect:${input.stepId}:${input.screenCode ?? "-"}`);
+        return later({
+          clientSecret: "ek_test",
+          expiresAt: "",
+          model: "gpt-realtime-2.1-mini",
+          conversationId: "c",
+        });
+      },
+    ),
     saveAiMessages: vi.fn(async (_s: unknown, turn: { stepId: number }) => {
       calls.push(`ai:save:${turn.stepId}`);
       return later({});
@@ -89,8 +90,11 @@ function clock(start = 1_000) {
   return { now: () => now, advance: (ms: number) => (now += ms) };
 }
 
+const remainingCompletes = (from: number, to: number) =>
+  Array.from({ length: to - from + 1 }, (_, i) => `complete:${from + i}:0`);
+
 describe("RealSessionTracker", () => {
-  it("시작 응답 전 요청도 순서대로 보내고, 단계를 다 끝낸 뒤 COMPLETED → 결과 순으로 부른다", async () => {
+  it("행동은 그 화면의 단계로, 단계 완료는 화면을 벗어날 때 순서대로 보내고, 끝나면 COMPLETED → 결과", async () => {
     const { api, calls } = fakeApi();
     const time = clock();
     const tracker = new RealSessionTracker("cafe", 101, api, time.now);
@@ -98,24 +102,24 @@ describe("RealSessionTracker", () => {
     tracker.start();
     tracker.enterProgress(1);
     time.advance(5_000);
-    tracker.recordAction("AI_HELP");
-    time.advance(5_000);
-    tracker.enterProgress(3); // 메뉴(11) 완료
+    tracker.record(1, { actionType: "SELECT", targetCode: "ORDER_TAKE_OUT" });
+    tracker.enterProgress(2); // 11 완료
     time.advance(2_000);
-    tracker.recordAction("BACK"); // 옵션(12)에서 뒤로
-    tracker.enterProgress(2); // 되돌아가도 다시 완료하지 않는다
+    tracker.record(2, { actionType: "BACK" });
+    tracker.enterProgress(1); // 되돌아가도 다시 완료하지 않는다
+    tracker.record(1, { actionType: "SELECT", targetCode: "ORDER_TAKE_OUT" }); // 지난 화면의 단계로
     time.advance(3_000);
-    tracker.enterProgress(5); // 옵션(12) 완료, 주문 확인(13) 진행 중
+    tracker.enterProgress(3); // 12 완료
     const result = await tracker.complete();
 
     expect(calls).toEqual([
       "start",
-      "action:AI_HELP:11",
-      "complete:11:10000",
-      "action:BACK:12",
+      "action:SELECT:ORDER_TAKE_OUT:11",
+      "complete:11:5000",
+      "action:BACK:-:12",
+      "action:SELECT:ORDER_TAKE_OUT:11",
       "complete:12:5000",
-      "complete:13:0",
-      "complete:14:0",
+      ...remainingCompletes(13, 19),
       "end:COMPLETED",
       "result",
     ]);
@@ -130,13 +134,32 @@ describe("RealSessionTracker", () => {
     tracker.start();
     tracker.abandon(true); // 시작 응답 전
     tracker.abandon();
-    tracker.recordAction("AI_HELP");
+    tracker.record(1, { actionType: "SELECT", targetCode: "ORDER_EAT_IN" });
     tracker.enterProgress(5);
     await expect(tracker.complete()).resolves.toBeNull();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(calls).toEqual(["start", "end:ABANDONED"]);
     expect(api.endSession).toHaveBeenCalledWith(SESSION, "ABANDONED", { keepalive: true });
+  });
+
+  it("결제를 마친 뒤 떠나면 중도 포기가 아니라 완료로 끝낸다", async () => {
+    const { api, calls } = fakeApi();
+    const tracker = new RealSessionTracker("fastfood", 201, api, clock().now);
+
+    tracker.start();
+    tracker.enterProgress(9);
+    tracker.markPaid();
+    tracker.abandon(true);
+    await vi.waitFor(() => expect(calls).toContain("result"));
+
+    expect(calls).toEqual([
+      "start",
+      ...remainingCompletes(21, 28),
+      "complete:29:0",
+      "end:COMPLETED",
+      "result",
+    ]);
   });
 
   it("시작하지 않았으면 아무것도 보내지 않는다 (미션 확인 화면에서 나간 경우)", async () => {
@@ -159,14 +182,16 @@ describe("RealSessionTracker", () => {
     expect(calls).toEqual(["start"]);
   });
 
-  it("AI 연결은 지금 단계로 임시 키를 받고, 대화는 세션이 끝난 뒤에도 저장한다", async () => {
+  it("AI 연결은 지금 단계·화면 코드로 임시 키를 받고, 대화는 세션이 끝난 뒤에도 저장한다", async () => {
     const { api, calls } = fakeApi();
     const tracker = new RealSessionTracker("cafe", 101, api, clock().now);
 
-    await expect(tracker.connectAi()).resolves.toBeNull(); // 시작 전
+    await expect(tracker.connectAi("SELECT_MENU")).resolves.toBeNull(); // 시작 전
     tracker.start();
-    tracker.enterProgress(3); // 11 완료 → 지금 단계 12
-    await expect(tracker.connectAi()).resolves.toMatchObject({ clientSecret: "ek_test" });
+    tracker.enterProgress(2); // 11 완료 → 지금 단계 12
+    await expect(tracker.connectAi("SELECT_MENU")).resolves.toMatchObject({
+      clientSecret: "ek_test",
+    });
     const result = tracker.complete();
     tracker.saveAiTurn({ stepId: 12, question: "q", answer: "a", responseTimeMs: 500 });
     await result;
@@ -176,15 +201,13 @@ describe("RealSessionTracker", () => {
     expect(calls).toEqual([
       "start",
       "complete:11:0",
-      "ai:connect:12",
-      "complete:12:0",
-      "complete:13:0",
-      "complete:14:0",
+      "ai:connect:12:SELECT_MENU",
+      ...remainingCompletes(12, 19),
       "end:COMPLETED",
       "result",
       "ai:save:12",
     ]);
-    expect(tracker.currentStepId).toBe(14);
+    expect(tracker.currentStepId).toBe(19);
   });
 
   it("중간 요청이 실패해도 다음 요청은 보낸다", async () => {
@@ -200,9 +223,7 @@ describe("RealSessionTracker", () => {
     expect(calls).toEqual([
       "start",
       "complete:11:fail",
-      "complete:12:0",
-      "complete:13:0",
-      "complete:14:0",
+      ...remainingCompletes(12, 19),
       "end:COMPLETED",
       "result",
     ]);

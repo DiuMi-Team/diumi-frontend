@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
-import { judgeMission, objectParticle } from "@/features/real/judge";
+import {
+  judgementFromServer,
+  judgeMission,
+  objectParticle,
+  readableDetail,
+} from "@/features/real/judge";
 import {
   formatDuration,
   realDrinkDetail,
@@ -154,6 +159,72 @@ describe("미션 판정", () => {
     expect(realOrderSummary(order(base))).toBe("아이스 아메리카노 Large 2잔 · 포장 · 카드 결제");
     expect(formatDuration(161_000)).toBe("2분 41초");
     expect(formatDuration(9_400)).toBe("9초");
+  });
+});
+
+describe("서버 수행 결과 → 결과 화면 판정", () => {
+  const base = {
+    sessionId: "s",
+    elapsedSeconds: 30,
+    aiHelpCount: 0,
+    errorCount: 0,
+    backCount: 0,
+  };
+
+  it("조건별 결과와 비율을 쓰고, 틀린 조건은 고른 것과 미션을 함께 보여 준다", () => {
+    const judgement = judgementFromServer({
+      ...base,
+      isSuccess: false,
+      conditionPassRate: 75,
+      conditions: [
+        { code: "ORDER_TYPE", condition: "매장 식사 선택", passed: true, detail: null },
+        {
+          code: "SIDE_DRINK",
+          condition: "감자튀김 · 콜라 선택",
+          passed: false,
+          detail: "샐러드 · 제로콜라를 골랐어요",
+        },
+      ],
+    });
+    expect(judgement).toEqual({
+      success: false,
+      percent: 75,
+      conditions: [
+        { label: "매장 식사 선택", ok: true, differences: [] },
+        {
+          label: "감자튀김 · 콜라 선택",
+          ok: false,
+          differences: ["샐러드 · 제로콜라를 골랐어요 (미션: 감자튀김 · 콜라 선택)"],
+        },
+      ],
+    });
+  });
+
+  it("서버 문장에 코드가 그대로 오면 이름으로 바꾸고 조사도 맞춘다", () => {
+    expect(readableDetail("SIDE_SALAD를 골랐어요")).toBe("샐러드를 골랐어요");
+    expect(readableDetail("SIDE_NUGGETS를 골랐어요")).toBe("치킨너겟을 골랐어요");
+    expect(readableDetail("SIDE_SALAD · DRINK_ORANGE를 골랐어요")).toBe(
+      "샐러드 · 오렌지를 골랐어요",
+    );
+    expect(readableDetail("MENU_COLD_BREW를 골랐어요")).toBe("콜드브루를 골랐어요");
+    expect(readableDetail("MENU_SPICY_BURGER를 골랐어요")).toBe("매운버거를 골랐어요");
+    expect(readableDetail("SIZE_EXTRA를 골랐어요")).toBe("Extra를 골랐어요");
+    // 이미 이름으로 온 문장과 모르는 코드는 그대로 둔다
+    expect(readableDetail("따뜻하게(HOT)를 골랐어요")).toBe("따뜻하게(HOT)를 골랐어요");
+    expect(readableDetail("NEW_CODE를 골랐어요")).toBe("NEW_CODE를 골랐어요");
+  });
+
+  it("비율이 없으면 맞힌 조건으로 계산하고, 조건이 없으면 null이다", () => {
+    expect(
+      judgementFromServer({
+        ...base,
+        isSuccess: true,
+        conditions: [
+          { code: "MENU", condition: "아이스 아메리카노 선택", passed: true, detail: null },
+        ],
+      }),
+    ).toMatchObject({ success: true, percent: 100 });
+    expect(judgementFromServer({ ...base, isSuccess: null })).toBeNull();
   });
 });
 

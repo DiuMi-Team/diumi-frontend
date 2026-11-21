@@ -3,7 +3,8 @@ import type { AiConnection, AiTurn } from "@/features/api/ai";
 import * as sessionApi from "@/features/api/session";
 import type { SessionEndStatus, SessionResult, StartedSession } from "@/features/api/session";
 import type { PracticeService } from "@/features/practice/types";
-import { activeStepId, allStepIds, stepIdsBefore } from "@/features/real/steps";
+import type { BackendAction } from "@/features/real/actions";
+import { activeStepId, allStepIds, stepIdForProgress, stepIdsBefore } from "@/features/real/steps";
 
 type SessionApi = Pick<
   typeof sessionApi,
@@ -25,6 +26,7 @@ export class RealSessionTracker {
   private session: StartedSession | null = null;
   private started = false;
   private ended: SessionEndStatus | null = null;
+  private paid = false;
   private queue: Promise<unknown> = Promise.resolve();
   private readonly completed = new Set<number>();
   /** 지금 단계를 시작한 시각 (앞 단계를 완료한 시각) */
@@ -54,11 +56,14 @@ export class RealSessionTracker {
     return activeStepId(this.service, this.completed) ?? all[all.length - 1];
   }
 
-  /** AI 음성 연결용 임시 키를 받는다. 세션이 없거나 끝났거나 실패하면 null */
-  connectAi(): Promise<AiConnection | null> {
+  /**
+   * AI 음성 연결용 임시 키를 받는다. 세션이 없거나 끝났거나 실패하면 null.
+   * 백엔드는 연결 횟수를 도움 요청 횟수(ai_help_count)로 센다.
+   */
+  connectAi(screenCode?: string): Promise<AiConnection | null> {
     if (!this.started || this.ended) return Promise.resolve(null);
     const stepId = this.currentStepId;
-    return this.enqueue((session) => this.api.startAiConnection(session, { stepId }));
+    return this.enqueue((session) => this.api.startAiConnection(session, { stepId, screenCode }));
   }
 
   /** 확정된 질문·답변을 저장한다. 세션이 끝난 뒤에도 저장할 수 있다 */
@@ -86,16 +91,23 @@ export class RealSessionTracker {
     this.completeSteps(stepIdsBefore(this.service, progress));
   }
 
-  /** 음성 도우미를 열었거나 뒤로 갔다 */
-  recordAction(actionType: sessionApi.ActionType): void {
+  /**
+   * 행동을 기록한다. 행동이 일어난 화면의 진행 단계(1~9)로 백엔드 단계를 정한다.
+   * 지난 화면으로 돌아가 다시 고른 행동도 그 화면의 단계로 기록된다.
+   */
+  record(progress: number, action: BackendAction): void {
     if (!this.started || this.ended) return;
-    const stepId = activeStepId(this.service, this.completed);
-    if (stepId === null) return;
+    const stepId = stepIdForProgress(this.service, progress);
     const occurredAt = this.now();
-    this.enqueue((session) => this.api.recordAction(session, { stepId, actionType, occurredAt }));
+    this.enqueue((session) => this.api.recordAction(session, { stepId, occurredAt, ...action }));
   }
 
-  /** 결제를 마쳤다. 남은 단계를 완료하고 COMPLETED로 끝낸 뒤 수행 결과를 돌려준다 */
+  /** 결제를 마쳤다. 이제 화면을 떠나도 중도 포기가 아니라 완료로 끝낸다 */
+  markPaid(): void {
+    this.paid = true;
+  }
+
+  /** 끝까지 마쳤다. 남은 단계를 완료하고 COMPLETED로 끝낸 뒤 수행 결과를 돌려준다 */
   complete(): Promise<SessionResult | null> {
     if (!this.started || this.ended) return Promise.resolve(null);
     this.completeSteps(allStepIds(this.service));
@@ -104,9 +116,16 @@ export class RealSessionTracker {
     return this.enqueue((session) => this.api.getSessionResult(session));
   }
 
-  /** 중간에 그만뒀다. 순서를 기다릴 필요가 없어 바로 보낸다 (탭을 닫을 때는 keepalive) */
+  /**
+   * 중간에 그만뒀다. 순서를 기다릴 필요가 없어 바로 보낸다 (탭을 닫을 때는 keepalive).
+   * 결제를 마친 뒤 떠난 경우(결제 완료 화면에서 나감)는 완료로 끝낸다.
+   */
   abandon(keepalive = false): void {
     if (!this.started || this.ended) return;
+    if (this.paid) {
+      this.complete();
+      return;
+    }
     this.ended = "ABANDONED";
     const send = (session: StartedSession) =>
       this.api.endSession(session, "ABANDONED", { keepalive }).catch(() => {});

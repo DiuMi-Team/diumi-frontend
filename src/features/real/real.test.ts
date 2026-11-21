@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
-import { judgeMission, objectParticle } from "@/features/real/judge";
+import { judgementFromServer, objectParticle, readableDetail } from "@/features/real/judge";
 import {
   formatDuration,
   realDrinkDetail,
   realDrinkName,
   realOrderSummary,
 } from "@/features/real/labels";
-import { CAFE_REAL_MISSION, FASTFOOD_REAL_MISSION } from "@/features/real/missions";
+import { CAFE_REAL_MISSION } from "@/features/real/missions";
 
 const REAL = { ...EMPTY_ORDER, sizeMenu: "real" as const };
 
@@ -66,7 +66,7 @@ describe("실전 카페 미션", () => {
   });
 });
 
-describe("미션 판정", () => {
+describe("결과 화면 문구", () => {
   const base: OrderAction[] = [
     { type: "setDineOption", value: "takeout" },
     { type: "selectMenu", menuId: "americano" },
@@ -77,83 +77,76 @@ describe("미션 판정", () => {
     { type: "completePayment" },
   ];
 
-  it("미션대로 주문하면 성공, 100%다", () => {
-    const result = judgeMission(CAFE_REAL_MISSION, order(base));
-    expect(result).toMatchObject({ success: true, percent: 100 });
-    expect(result.conditions.every((condition) => condition.ok)).toBe(true);
-  });
-
-  it("사이즈만 다르면 75%이고 다른 점을 알려 준다", () => {
-    const result = judgeMission(
-      CAFE_REAL_MISSION,
-      order([...base.slice(0, 3), { type: "setSize", value: "extra" }, ...base.slice(3)]),
-    );
-    expect(result).toMatchObject({ success: false, percent: 75 });
-    expect(result.conditions[1]).toEqual({
-      label: "Large 사이즈 · 수량 2잔",
-      ok: false,
-      differences: ["사이즈: Extra를 골랐어요 → 미션은 Large"],
-    });
-  });
-
-  it("온도·수량·이용 방법·결제 방법이 다르면 각각 알려 준다", () => {
-    const result = judgeMission(
-      CAFE_REAL_MISSION,
-      order([
-        { type: "setDineOption", value: "dineIn" },
-        { type: "selectMenu", menuId: "americano" },
-        { type: "setTemperature", value: "hot" },
-        { type: "addDraftToCart" },
-        { type: "selectPayment", value: "mobilePay" },
-        { type: "completePayment" },
-      ]),
-    );
-    expect(result.percent).toBe(0);
-    expect(result.conditions.flatMap((condition) => condition.differences)).toEqual([
-      "온도: HOT을 골랐어요 → 미션은 ICE",
-      "수량: 1잔 → 미션은 2잔",
-      "이용 방법: 매장을 골랐어요 → 미션은 포장",
-      "결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드",
-    ]);
-  });
-
-  it("미션에 없는 메뉴를 더 담으면 메뉴 조건이 틀린다", () => {
-    const result = judgeMission(
-      CAFE_REAL_MISSION,
-      order([
-        ...base.slice(0, 5),
-        { type: "selectMenu", menuId: "latte" },
-        { type: "setTemperature", value: "hot" },
-        { type: "addDraftToCart" },
-        ...base.slice(5),
-      ]),
-    );
-    expect(result.conditions[0].ok).toBe(false);
-    expect(result.conditions[0].differences).toEqual([
-      "미션에 없는 메뉴도 담았어요: 따뜻한 카페라떼 Large 1잔",
-    ]);
-  });
-
-  it("아메리카노를 담지 않으면 메뉴가 없다고 알려 준다", () => {
-    const result = judgeMission(
-      CAFE_REAL_MISSION,
-      order([
-        { type: "setDineOption", value: "takeout" },
-        { type: "selectMenu", menuId: "mocha" },
-        { type: "setTemperature", value: "ice" },
-        { type: "addDraftToCart" },
-      ]),
-    );
-    expect(result.conditions[0].differences[0]).toBe("메뉴: 아메리카노가 담기지 않았어요");
-    expect(result.conditions[3].differences[0]).toBe(
-      "결제를 마치지 않았어요 → 미션은 신용·체크카드",
-    );
-  });
-
   it("결과 화면 문구: 완료한 주문과 소요 시간", () => {
     expect(realOrderSummary(order(base))).toBe("아이스 아메리카노 Large 2잔 · 포장 · 카드 결제");
     expect(formatDuration(161_000)).toBe("2분 41초");
     expect(formatDuration(9_400)).toBe("9초");
+  });
+});
+
+describe("서버 수행 결과 → 결과 화면 판정", () => {
+  const base = {
+    sessionId: "s",
+    elapsedSeconds: 30,
+    aiHelpCount: 0,
+    errorCount: 0,
+    backCount: 0,
+  };
+
+  it("조건별 결과와 비율을 쓰고, 틀린 조건은 고른 것과 미션을 함께 보여 준다", () => {
+    const judgement = judgementFromServer({
+      ...base,
+      isSuccess: false,
+      conditionPassRate: 75,
+      conditions: [
+        { code: "ORDER_TYPE", condition: "매장 식사 선택", passed: true, detail: null },
+        {
+          code: "SIDE_DRINK",
+          condition: "감자튀김 · 콜라 선택",
+          passed: false,
+          detail: "샐러드 · 제로콜라를 골랐어요",
+        },
+      ],
+    });
+    expect(judgement).toEqual({
+      success: false,
+      percent: 75,
+      conditions: [
+        { label: "매장 식사 선택", ok: true, differences: [] },
+        {
+          label: "감자튀김 · 콜라 선택",
+          ok: false,
+          differences: ["샐러드 · 제로콜라를 골랐어요 (미션: 감자튀김 · 콜라 선택)"],
+        },
+      ],
+    });
+  });
+
+  it("서버 문장에 코드가 그대로 오면 이름으로 바꾸고 조사도 맞춘다", () => {
+    expect(readableDetail("SIDE_SALAD를 골랐어요")).toBe("샐러드를 골랐어요");
+    expect(readableDetail("SIDE_NUGGETS를 골랐어요")).toBe("치킨너겟을 골랐어요");
+    expect(readableDetail("SIDE_SALAD · DRINK_ORANGE를 골랐어요")).toBe(
+      "샐러드 · 오렌지를 골랐어요",
+    );
+    expect(readableDetail("MENU_COLD_BREW를 골랐어요")).toBe("콜드브루를 골랐어요");
+    expect(readableDetail("MENU_SPICY_BURGER를 골랐어요")).toBe("매운버거를 골랐어요");
+    expect(readableDetail("SIZE_EXTRA를 골랐어요")).toBe("Extra를 골랐어요");
+    // 이미 이름으로 온 문장과 모르는 코드는 그대로 둔다
+    expect(readableDetail("따뜻하게(HOT)를 골랐어요")).toBe("따뜻하게(HOT)를 골랐어요");
+    expect(readableDetail("NEW_CODE를 골랐어요")).toBe("NEW_CODE를 골랐어요");
+  });
+
+  it("비율이 없으면 맞힌 조건으로 계산하고, 조건이 없으면 null이다", () => {
+    expect(
+      judgementFromServer({
+        ...base,
+        isSuccess: true,
+        conditions: [
+          { code: "MENU", condition: "아이스 아메리카노 선택", passed: true, detail: null },
+        ],
+      }),
+    ).toMatchObject({ success: true, percent: 100 });
+    expect(judgementFromServer({ ...base, isSuccess: null })).toBeNull();
   });
 });
 
@@ -180,55 +173,6 @@ describe("실전 패스트푸드", () => {
       step: 8,
       label: "결제 방법",
     });
-  });
-
-  it("미션대로 주문하면 성공, 100%다", () => {
-    const result = judgeMission(FASTFOOD_REAL_MISSION, order(set));
-    expect(result.success).toBe(true);
-    expect(result.percent).toBe(100);
-  });
-
-  it("단품·이용 방법이 다르면 각각 알려 준다", () => {
-    const result = judgeMission(
-      FASTFOOD_REAL_MISSION,
-      order([
-        { type: "setDineOption", value: "takeout" },
-        { type: "selectBurger", menuId: "bulgogi" },
-        { type: "chooseSet", set: false },
-        { type: "addDraftToCart" },
-        { type: "selectPayment", value: "card" },
-        { type: "completePayment" },
-      ]),
-    );
-    expect(result.percent).toBe(25);
-    expect(result.conditions.map((condition) => condition.differences)).toEqual([
-      ["이용 방법: 포장을 골랐어요 → 미션은 매장"],
-      ["구성: 단품을 골랐어요 → 미션은 세트"],
-      ["사이드·음료를 고르지 않았어요 → 미션은 감자튀김 · 콜라"],
-      [],
-    ]);
-  });
-
-  it("사이드·음료·수량이 다르면 알려 준다", () => {
-    const result = judgeMission(
-      FASTFOOD_REAL_MISSION,
-      order([
-        { type: "setDineOption", value: "dineIn" },
-        { type: "selectBurger", menuId: "bulgogi" },
-        { type: "chooseSet", set: true },
-        { type: "setSide", value: "salad" },
-        { type: "setSetDrink", value: "zero" },
-        { type: "setQuantity", value: 2 },
-        { type: "addDraftToCart" },
-        { type: "selectPayment", value: "card" },
-        { type: "completePayment" },
-      ]),
-    );
-    expect(result.conditions[1].differences).toEqual(["수량: 2개 → 미션은 1개"]);
-    expect(result.conditions[2].differences).toEqual([
-      "사이드: 샐러드를 골랐어요 → 미션은 감자튀김",
-      "음료: 제로콜라를 골랐어요 → 미션은 콜라",
-    ]);
   });
 
   it("결과 화면 문구: 세트 구성과 이용 방법", () => {

@@ -8,7 +8,7 @@ import {
 } from "@/components/icons/kiosk-icons";
 import { PaymentAmount } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_OUTLINE_CLASS, REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 import { formatWon, payableTotal } from "@/features/order/order";
 
 /* 결제 수단별 화면 (RCM10~RCM12). 모두 같은 틀: 제목 → 안내 그림 → 도움말 → 완료 버튼 */
@@ -66,13 +66,15 @@ export function RealPayMobileScreen() {
       <p className="rounded-[18px] bg-gray-1 px-4 py-3 text-16 leading-[1.45] short:py-2">
         결제가 끝날 때까지 휴대전화를 리더기에서 떼지 마세요.
       </p>
-      <button
-        type="button"
-        onClick={() => finishPayment("payMobile:done")}
-        className={REAL_PRIMARY_CLASS}
-      >
-        결제 완료 확인
-      </button>
+      <RealBottomBar>
+        <button
+          type="button"
+          onClick={() => finishPayment("payMobile:done")}
+          className={REAL_PRIMARY_CLASS}
+        >
+          결제 완료 확인
+        </button>
+      </RealBottomBar>
     </PayLayout>
   );
 }
@@ -106,13 +108,15 @@ export function RealPayGiftCardScreen() {
       <p className="rounded-[18px] bg-gray-1 px-4 py-3 text-16 leading-[1.45] short:py-2">
         잔액이 부족하면 다른 결제 방법을 다시 선택할 수 있어요.
       </p>
-      <button
-        type="button"
-        onClick={() => finishPayment("payGiftCard:done")}
-        className={REAL_PRIMARY_CLASS}
-      >
-        기프트카드 인식 완료
-      </button>
+      <RealBottomBar>
+        <button
+          type="button"
+          onClick={() => finishPayment("payGiftCard:done")}
+          className={REAL_PRIMARY_CLASS}
+        >
+          기프트카드 인식 완료
+        </button>
+      </RealBottomBar>
     </PayLayout>
   );
 }
@@ -140,13 +144,15 @@ export function RealPayCardScreen() {
       <button type="button" onClick={back} className={REAL_OUTLINE_CLASS}>
         결제 방법 다시 선택
       </button>
-      <button
-        type="button"
-        onClick={() => finishPayment("payCard:done")}
-        className={REAL_PRIMARY_CLASS}
-      >
-        결제 완료 확인
-      </button>
+      <RealBottomBar>
+        <button
+          type="button"
+          onClick={() => finishPayment("payCard:done")}
+          className={REAL_PRIMARY_CLASS}
+        >
+          결제 완료 확인
+        </button>
+      </RealBottomBar>
     </PayLayout>
   );
 }

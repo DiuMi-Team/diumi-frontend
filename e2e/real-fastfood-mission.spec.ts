@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockBackend } from "./mock-backend";
 
 const main = (page: Page) => page.locator("main");
 
@@ -38,9 +39,20 @@ test("실전 유형 선택에서 미션 수행하기로 들어간다", async ({ 
   await expect(conditions).toContainText("감자튀김 · 콜라 선택");
 });
 
+const FASTFOOD_CONDITIONS = [
+  "매장 식사 선택",
+  "불고기버거 세트 선택",
+  "감자튀김 · 콜라 선택",
+  "카드 결제 완료",
+];
+
 test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문하고 미션에 성공한다", async ({
   page,
 }) => {
+  const backend = await mockBackend(page, {
+    isSuccess: true,
+    conditions: FASTFOOD_CONDITIONS.map((condition) => ({ condition, passed: true })),
+  });
   await startMission(page);
   await expect(page.getByText("미션: 불고기버거 세트 · 매장 · 카드")).toBeVisible();
   await expect(page.getByText("패스트푸드는 주문 전에 먼저 선택해요")).toBeVisible();
@@ -110,9 +122,40 @@ test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문
     "불고기버거 세트 · 감자튀김 · 콜라 · 매장 · 카드 결제",
   );
   await expect(main(page)).toContainText("주문번호 A-127");
+
+  // 백엔드에 보낸 행동: 주문 확인에서 items를 함께 보낸다
+  expect(backend.actions.find((action) => action.target_code === "BUTTON_ORDER")).toMatchObject({
+    step_id: 27,
+    action_data: {
+      items: [
+        {
+          menu: "MENU_BULGOGI_BURGER",
+          meal_type: "MEAL_SET",
+          side: "SIDE_FRIES",
+          drink: "DRINK_COLA",
+          quantity: 1,
+        },
+      ],
+    },
+  });
 });
 
-test("사이드·음료와 결제 방법이 다르면 주문은 완료되고 다른 점을 보여 준다", async ({ page }) => {
+test("사이드·음료와 결제 방법이 다르면 주문은 완료되고 서버 판정의 다른 점을 보여 준다", async ({
+  page,
+}) => {
+  await mockBackend(page, {
+    isSuccess: false,
+    conditions: [
+      { condition: FASTFOOD_CONDITIONS[0], passed: true },
+      { condition: FASTFOOD_CONDITIONS[1], passed: true },
+      {
+        condition: FASTFOOD_CONDITIONS[2],
+        passed: false,
+        detail: "SIDE_SALAD · 제로콜라를 골랐어요",
+      },
+      { condition: FASTFOOD_CONDITIONS[3], passed: false, detail: "모바일페이를 골랐어요" },
+    ],
+  });
   await startMission(page);
   await addBulgogiSet(page, "샐러드 +500원", "제로콜라 +0원");
   await payWith(page, "모바일페이");
@@ -124,12 +167,22 @@ test("사이드·음료와 결제 방법이 다르면 주문은 완료되고 다
     "50",
   );
   const differences = page.getByRole("region", { name: "미션과 다른 점" });
-  await expect(differences).toContainText("사이드: 샐러드를 골랐어요 → 미션은 감자튀김");
-  await expect(differences).toContainText("음료: 제로콜라를 골랐어요 → 미션은 콜라");
-  await expect(differences).toContainText("결제: 모바일페이로 결제했어요 → 미션은 신용·체크카드");
+  await expect(differences).toContainText(
+    "샐러드 · 제로콜라를 골랐어요 (미션: 감자튀김 · 콜라 선택)",
+  );
+  await expect(differences).toContainText("모바일페이를 골랐어요 (미션: 카드 결제 완료)");
 });
 
 test("단품을 고르면 사이드·음료 없이 담기 화면으로 가고, 판정에서 알려 준다", async ({ page }) => {
+  await mockBackend(page, {
+    isSuccess: false,
+    conditions: [
+      { condition: FASTFOOD_CONDITIONS[0], passed: true },
+      { condition: FASTFOOD_CONDITIONS[1], passed: false, detail: "단품을 골랐어요" },
+      { condition: FASTFOOD_CONDITIONS[2], passed: false, detail: "사이드·음료를 고르지 않았어요" },
+      { condition: FASTFOOD_CONDITIONS[3], passed: true },
+    ],
+  });
   await startMission(page);
   await page.getByRole("button", { name: "매장에서 먹기" }).click();
   await page.getByRole("button", { name: "불고기버거 4,800원" }).click();
@@ -141,7 +194,7 @@ test("단품을 고르면 사이드·음료 없이 담기 화면으로 가고, �
   await page.getByRole("button", { name: "주문번호 확인" }).click();
 
   const differences = page.getByRole("region", { name: "미션과 다른 점" });
-  await expect(differences).toContainText("구성: 단품을 골랐어요 → 미션은 세트");
+  await expect(differences).toContainText("단품을 골랐어요 (미션: 불고기버거 세트 선택)");
   await expect(differences).toContainText("사이드·음료를 고르지 않았어요");
 });
 
@@ -206,9 +259,14 @@ test("결제 방법에서 쿠폰·포인트는 준비 중이라고 알려 준다
   await expect(page.getByText("8 / 9")).toBeVisible();
 });
 
-test("음성 도우미는 패스트푸드에 맞는 예시를 보여 준다", async ({ page }) => {
-  await startMission(page);
+test("미션 확인 화면에는 음성 도우미가 없고, 미션을 시작하면 생긴다", async ({ page }) => {
+  await page.goto("/fastfood/real/mission");
+  await expect(page.getByRole("heading", { name: "오늘의 미션" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "음성 도우미" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "미션 시작하기" }).click();
   await page.getByRole("button", { name: "음성 도우미" }).click();
   const sheet = page.getByRole("dialog", { name: "AI 음성 도우미" });
-  await expect(sheet).toContainText("매장에서 먹기를 누르면 돼요.");
+  // e2e는 백엔드에 연결되지 않으므로 연결 실패 안내가 나온다
+  await expect(sheet.getByRole("alert")).toContainText("지금은 AI 도우미에 연결할 수 없어요");
 });

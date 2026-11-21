@@ -4,7 +4,13 @@ import { useState, type ReactNode } from "react";
 import { HotIcon, IceIcon } from "@/components/icons/kiosk-icons";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { OptionLabel, REAL_PRIMARY_CLASS, SelectTile, Stepper } from "@/components/real/parts";
+import {
+  OptionLabel,
+  REAL_PRIMARY_CLASS,
+  RealBottomBar,
+  SelectTile,
+  Stepper,
+} from "@/components/real/parts";
 import { getCafeMenu, SIZE_LABEL, SIZE_MENUS, type Temperature } from "@/features/cafe/catalog";
 import { formatWon, freeOptionSummaries, paidOptionsSummary } from "@/features/order/order";
 
@@ -94,9 +100,11 @@ export function RealOptionsScreen() {
         </p>
       )}
       <Spacer />
-      <button type="button" onClick={confirm} className={REAL_PRIMARY_CLASS}>
-        선택 완료
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={confirm} className={REAL_PRIMARY_CLASS}>
+          선택 완료
+        </button>
+      </RealBottomBar>
     </>
   );
 }

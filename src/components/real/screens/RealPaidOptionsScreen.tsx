@@ -3,7 +3,7 @@
 import { PaidOptionIcon } from "@/components/icons/kiosk-icons";
 import { ScreenHeading, Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_PRIMARY_CLASS, SelectTile, Stepper } from "@/components/real/parts";
+import { REAL_PRIMARY_CLASS, RealBottomBar, SelectTile, Stepper } from "@/components/real/parts";
 import { PAID_OPTIONS } from "@/features/cafe/catalog";
 import { formatWon, itemPrice, paidOptionsPrice } from "@/features/order/order";
 
@@ -72,9 +72,11 @@ export function RealPaidOptionsScreen() {
         </div>
       </div>
       <Spacer />
-      <button type="button" onClick={back} className={REAL_PRIMARY_CLASS}>
-        유료 옵션 선택 완료
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={back} className={REAL_PRIMARY_CLASS}>
+          유료 옵션 선택 완료
+        </button>
+      </RealBottomBar>
     </>
   );
 }

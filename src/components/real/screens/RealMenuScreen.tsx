@@ -5,7 +5,7 @@ import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY, type BoardItem } from "@/components/practice/kiosk/copy";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 import type { CafeMenuId } from "@/features/cafe/catalog";
 import type { BurgerId } from "@/features/fastfood/catalog";
 import { cartCount, cartTotal, formatWon, itemName } from "@/features/order/order";
@@ -138,20 +138,22 @@ export function RealMenuScreen() {
         </p>
       )}
       <Spacer />
-      {isEmpty ? (
-        <button type="button" onClick={() => setHint(true)} className={REAL_PRIMARY_CLASS}>
-          선택한 메뉴 보기
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => go(isCafe ? "cart" : "orderReview")}
-          className={REAL_PRIMARY_CLASS}
-        >
-          {copy.checkout.label}
-          {copy.checkout.chevron && <ChevronRightIcon size={20} />}
-        </button>
-      )}
+      <RealBottomBar>
+        {isEmpty ? (
+          <button type="button" onClick={() => setHint(true)} className={REAL_PRIMARY_CLASS}>
+            선택한 메뉴 보기
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => go(isCafe ? "cart" : "orderReview")}
+            className={REAL_PRIMARY_CLASS}
+          >
+            {copy.checkout.label}
+            {copy.checkout.chevron && <ChevronRightIcon size={20} />}
+          </button>
+        )}
+      </RealBottomBar>
     </>
   );
 }

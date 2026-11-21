@@ -2,7 +2,12 @@
 
 import { ScreenHeading, Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { OptionLabel, REAL_PRIMARY_CLASS, SelectTile } from "@/components/real/parts";
+import {
+  OptionLabel,
+  REAL_PRIMARY_CLASS,
+  RealBottomBar,
+  SelectTile,
+} from "@/components/real/parts";
 import { FREE_OPTIONS } from "@/features/cafe/catalog";
 
 /** 무료 옵션 (RCM05). 고르지 않으면 기본값으로 만든다 */
@@ -50,9 +55,11 @@ export function RealFreeOptionsScreen() {
         </div>
       ))}
       <Spacer />
-      <button type="button" onClick={back} className={REAL_PRIMARY_CLASS}>
-        무료 옵션 선택 완료
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={back} className={REAL_PRIMARY_CLASS}>
+          무료 옵션 선택 완료
+        </button>
+      </RealBottomBar>
     </>
   );
 }

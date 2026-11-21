@@ -3,6 +3,7 @@
 import { createContext, use, type ReactNode } from "react";
 import type { OrderAction, OrderState } from "@/features/order/order";
 import type { RealScreen } from "@/features/real/flow";
+import type { MissionJudgement } from "@/features/real/judge";
 import type { RealSetup } from "@/features/real/missions";
 
 type RealContextValue = {
@@ -21,6 +22,13 @@ type RealContextValue = {
   restart: () => void;
   /** 결과 화면에 보여 줄 소요 시간과 도움 요청 횟수 */
   stats: { elapsedMs: number; helpCount: number };
+  /**
+   * 미션 결과 판정 (백엔드). "pending"이면 기다리는 중, "failed"면 받지 못했다.
+   * 결과 화면에 가기 전에는 null이다.
+   */
+  serverJudgement: MissionJudgement | "pending" | "failed" | null;
+  /** 결과를 못 받았을 때 다시 불러온다 */
+  retryResult: () => void;
   /** 멤버십 적립처럼 아직 만들지 않은 기능 */
   comingSoon: () => void;
 };

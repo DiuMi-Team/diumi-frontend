@@ -4,7 +4,7 @@ import { CouponIcon, MembershipStarIcon } from "@/components/icons/kiosk-icons";
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { ScreenHeading, Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 
 const TILE_CLASS =
   "flex h-40 flex-col items-center justify-center gap-2.5 rounded-3xl bg-gray-1 text-19 font-bold short:h-[120px] short:gap-1.5 short:[&>svg]:size-12";
@@ -40,10 +40,12 @@ export function RealMembershipScreen() {
         휴대전화 번호 입력 또는 바코드 인식으로 적립할 수 있어요.
       </p>
       <Spacer />
-      <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
-        다음
-        <ChevronRightIcon size={20} />
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
+          다음
+          <ChevronRightIcon size={20} />
+        </button>
+      </RealBottomBar>
     </>
   );
 }

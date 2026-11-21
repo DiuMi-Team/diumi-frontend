@@ -4,7 +4,7 @@ import { CheckIcon, ReceiptIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { Spacer } from "@/components/practice/kiosk/parts";
 import { useReal } from "@/components/real/RealContext";
-import { REAL_PRIMARY_CLASS } from "@/components/real/parts";
+import { REAL_PRIMARY_CLASS, RealBottomBar } from "@/components/real/parts";
 
 /** 결제 완료·대기번호 (RCM13). 결제를 마쳐서 되돌아갈 수 없다 */
 export function RealDoneScreen() {
@@ -40,9 +40,11 @@ export function RealDoneScreen() {
         {isCafe ? "영수증이 출력되고 있어요" : "영수증 출력 중"}
       </div>
       <Spacer />
-      <button type="button" onClick={() => go("result")} className={REAL_PRIMARY_CLASS}>
-        {isCafe ? "결제 완료 확인" : "주문번호 확인"}
-      </button>
+      <RealBottomBar>
+        <button type="button" onClick={() => go("result")} className={REAL_PRIMARY_CLASS}>
+          {isCafe ? "결제 완료 확인" : "주문번호 확인"}
+        </button>
+      </RealBottomBar>
     </>
   );
 }

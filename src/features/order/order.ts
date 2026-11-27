@@ -93,6 +93,8 @@ export type OrderAction =
   | { type: "setPaidOption"; option: PaidOptionId; count: number }
   | { type: "setFreeOption"; key: FreeOptionKey; value: string }
   | { type: "setCartQuantity"; index: number; value: number }
+  | { type: "removeCartItem"; index: number }
+  | { type: "clearCart" }
   | { type: "addDraftToCart" }
   | { type: "applyCoupon"; couponId: CouponId }
   | { type: "selectPayment"; value: PaymentMethod }
@@ -192,6 +194,14 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         ),
       };
     }
+    case "removeCartItem": {
+      if (!state.cart[action.index]) throw new Error(`장바구니에 없는 항목이에요: ${action.index}`);
+      const cart = state.cart.filter((_, index) => index !== action.index);
+      /* 쿠폰은 담은 메뉴가 있어야 쓸 수 있어서, 다 빠지면 함께 뺀다 */
+      return { ...state, cart, couponId: cart.length > 0 ? state.couponId : null };
+    }
+    case "clearCart":
+      return { ...state, cart: [], couponId: null };
     case "addDraftToCart":
       return { ...state, cart: [...state.cart, completeDraft(requireDraft(state))], draft: null };
     case "applyCoupon":

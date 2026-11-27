@@ -293,6 +293,31 @@ describe("주문 상태", () => {
     expect(() => orderReducer(state, { type: "setCartQuantity", index: 3, value: 1 })).toThrow();
   });
 
+  it("장바구니 메뉴를 하나씩 또는 전부 삭제하면 금액이 다시 계산된다", () => {
+    const state = run([
+      { type: "selectMenu", menuId: "americano" },
+      { type: "setTemperature", value: "ice" },
+      { type: "addDraftToCart" },
+      { type: "selectMenu", menuId: "latte" },
+      { type: "setTemperature", value: "hot" },
+      { type: "addDraftToCart" },
+      { type: "applyCoupon", couponId: "drink1000" },
+    ]);
+    const removed = orderReducer(state, { type: "removeCartItem", index: 0 });
+    expect(removed.cart.map((item) => item.menuId)).toEqual(["latte"]);
+    expect(cartTotal(removed.cart)).toBe(cartTotal(state.cart) - cartTotal(state.cart.slice(0, 1)));
+    expect(removed.couponId).toBe("drink1000");
+
+    const empty = orderReducer(removed, { type: "removeCartItem", index: 0 });
+    expect(empty.cart).toEqual([]);
+    expect(empty.couponId).toBeNull();
+
+    const cleared = orderReducer(state, { type: "clearCart" });
+    expect(cleared.cart).toEqual([]);
+    expect(cleared.couponId).toBeNull();
+    expect(() => orderReducer(state, { type: "removeCartItem", index: 5 })).toThrow();
+  });
+
   it("금액은 천 단위 쉼표와 원을 붙인다", () => {
     expect(formatWon(3200)).toBe("3,200원");
     expect(formatWon(12700)).toBe("12,700원");

@@ -7,6 +7,7 @@ import { Dialog } from "@/components/common/Dialog";
 import { GuideBubble } from "@/components/common/GuideBubble";
 import { Header, HeaderChip } from "@/components/common/Header";
 import { NavBar } from "@/components/common/NavBar";
+import { useBrowserBack } from "@/components/common/useBrowserBack";
 import { PracticeProgress } from "@/components/common/Progress";
 import { HomeFilledIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
@@ -65,6 +66,9 @@ export function PracticeRunner({ mission }: { mission: PracticeMission }) {
     if (previous) move(previous);
     else router.push(mission.selectHref);
   };
+
+  /* 휴대폰 뒤로 가기도 "이전으로"처럼 한 단계씩 돌아간다. 오늘의 미션·연습 완료 화면에서는 원래대로 나간다 */
+  useBrowserBack(position.kind === "step", goBack);
 
   const header = (
     <Header

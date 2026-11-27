@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_ORDER, orderReducer, type OrderAction } from "@/features/order/order";
 import { realProgress } from "@/features/real/flow";
-import { judgementFromServer, objectParticle, readableDetail } from "@/features/real/judge";
+import {
+  directionParticle,
+  goodPointText,
+  judgementFromServer,
+  objectParticle,
+  readableDetail,
+} from "@/features/real/judge";
 import {
   formatDuration,
   realDrinkDetail,
@@ -112,11 +118,12 @@ describe("서버 수행 결과 → 결과 화면 판정", () => {
       success: false,
       percent: 75,
       conditions: [
-        { label: "매장 식사 선택", ok: true, differences: [] },
+        { label: "매장 식사 선택", ok: true, differences: [], goodPoint: "매장 식사를 골랐어요" },
         {
           label: "감자튀김 · 콜라 선택",
           ok: false,
           differences: ["샐러드 · 제로콜라를 골랐어요 (미션: 감자튀김 · 콜라 선택)"],
+          goodPoint: null,
         },
       ],
     });
@@ -186,5 +193,17 @@ describe("실전 패스트푸드", () => {
     expect(objectParticle("콜라")).toBe("를");
     expect(objectParticle("HOT")).toBe("을");
     expect(objectParticle("Large")).toBe("를");
+  });
+
+  it("맞힌 조건은 잘한 점 문장으로 바꾼다", () => {
+    expect(goodPointText("아이스 아메리카노 선택")).toBe("아이스 아메리카노를 골랐어요");
+    expect(goodPointText("포장 선택")).toBe("포장을 골랐어요");
+    expect(goodPointText("감자튀김 · 콜라 선택")).toBe("감자튀김 · 콜라를 골랐어요");
+    expect(goodPointText("카드 결제 완료")).toBe("카드로 결제했어요");
+    expect(goodPointText("Large 사이즈 · 수량 2잔")).toBe("Large 사이즈 · 수량 2잔");
+    expect(goodPointText("포장 선택", "SIDE_SALAD를 골랐어요")).toBe("샐러드를 골랐어요");
+    expect(directionParticle("현금")).toBe("으로");
+    expect(directionParticle("모바일페이")).toBe("로");
+    expect(directionParticle("지하철")).toBe("로");
   });
 });

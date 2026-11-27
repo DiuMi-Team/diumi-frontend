@@ -137,3 +137,76 @@
     animation: none;
   }
 }
+
+/*
+ * 음성 도우미 마이크 뒤 배경 (CHANGES 5). 84px 마이크 버튼은 그대로 두고 뒤의 빛 세 겹만 은은하게 일렁인다.
+ * 마이크로 듣는 동안에만 .voice-orb-active로 움직이고, 대기·답변 중에는 멈춘 모습으로 둔다.
+ * 기기의 동작 줄이기 설정과 상관없이 움직인다(사용자 결정). 듣는 중임을 알려 주는 표시라서다.
+ */
+.voice-orb-halo {
+  background: radial-gradient(circle, rgb(185 230 232 / 0.55) 0%, rgb(185 230 232 / 0) 70%);
+}
+
+.voice-orb-glow {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(245 166 91 / 0.8) 0%,
+    rgb(245 166 91 / 0.55) 40%,
+    rgb(253 235 217 / 0.9) 62%,
+    rgb(253 235 217 / 0) 74%
+  );
+  filter: blur(4px);
+}
+
+.voice-orb-core {
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgb(245 166 91 / 0.95) 0%,
+    rgb(245 166 91 / 0) 70%
+  );
+  filter: blur(6px);
+}
+
+.voice-orb-active .voice-orb-halo {
+  animation: voice-orb-halo 1.4s ease-in-out infinite;
+}
+
+.voice-orb-active .voice-orb-glow {
+  animation: voice-orb-breath 1.4s ease-in-out infinite;
+}
+
+.voice-orb-active .voice-orb-core {
+  animation: voice-orb-drift 2.8s ease-in-out infinite;
+}
+
+@keyframes voice-orb-breath {
+  0%,
+  100% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes voice-orb-halo {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes voice-orb-drift {
+  0%,
+  100% {
+    transform: translate(-6px, -4px) scale(1);
+  }
+  50% {
+    transform: translate(6px, 5px) scale(1.15);
+  }
+}

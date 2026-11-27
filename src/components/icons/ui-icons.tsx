@@ -164,7 +164,7 @@ export function WarningIcon({ size }: IconProps) {
   );
 }
 
-export function CheckIcon({ size }: IconProps) {
+export function CheckIcon({ size, strokeWidth = 3.4 }: IconProps & { strokeWidth?: number }) {
   return (
     <svg
       width={size}
@@ -172,7 +172,7 @@ export function CheckIcon({ size }: IconProps) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="3.4"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -196,6 +196,24 @@ export function ReceiptIcon({ size }: IconProps) {
       aria-hidden="true"
     >
       <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size, strokeWidth = 2.2 }: IconProps & { strokeWidth?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" />
     </svg>
   );
 }

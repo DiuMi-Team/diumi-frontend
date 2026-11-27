@@ -107,10 +107,12 @@ test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문
   await expect(page.getByText("9 / 9")).toBeVisible();
   // 미션은 첫 화면 뒤에도 결제 완료(9/9)까지 진행바 아래에 계속 보인다
   await expect(page.getByText("미션: 불고기버거 세트 · 매장 · 카드")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "결제가 완료되었습니다" })).toBeVisible();
-  await expect(main(page)).toContainText("A-127");
-  await expect(main(page)).toContainText("영수증 출력 중");
-  await page.getByRole("button", { name: "주문번호 확인" }).click();
+  await expect(page.getByRole("heading", { name: "결제가 완료되었어요" })).toBeVisible();
+  const receipt = page.getByRole("region", { name: "영수증" });
+  await expect(receipt).toContainText("디우미 패스트푸드 · 매장");
+  await expect(receipt).toContainText("주문번호 A-127");
+  await expect(receipt.getByRole("listitem")).toHaveText(["불고기버거 세트17,200"]);
+  await page.getByRole("button", { name: "결과 보기" }).click();
 
   await expect(page.getByRole("heading", { name: "미션을 성공했어요!" })).toBeVisible();
   await expect(page.getByText(/^미션:/)).toHaveCount(0);
@@ -118,10 +120,13 @@ test("강조 없이 스스로 불고기버거 세트를 매장·카드로 주문
     "aria-valuenow",
     "100",
   );
-  await expect(page.getByRole("region", { name: "완료한 주문" })).toContainText(
-    "불고기버거 세트 · 감자튀김 · 콜라 · 매장 · 카드 결제",
-  );
-  await expect(main(page)).toContainText("주문번호 A-127");
+  await expect(page.getByRole("region", { name: "잘한 점" }).getByRole("listitem")).toHaveText([
+    "매장 식사를 골랐어요",
+    "불고기버거 세트를 골랐어요",
+    "감자튀김 · 콜라를 골랐어요",
+    "카드로 결제했어요",
+  ]);
+  await expect(page.getByRole("region", { name: "완료한 주문" })).toHaveCount(0);
 
   // 백엔드에 보낸 행동: 주문 확인에서 items를 함께 보낸다
   expect(backend.actions.find((action) => action.target_code === "BUTTON_ORDER")).toMatchObject({
@@ -159,7 +164,7 @@ test("사이드·음료와 결제 방법이 다르면 주문은 완료되고 서
   await startMission(page);
   await addBulgogiSet(page, "샐러드 +500원", "제로콜라 +0원");
   await payWith(page, "모바일페이");
-  await page.getByRole("button", { name: "주문번호 확인" }).click();
+  await page.getByRole("button", { name: "결과 보기" }).click();
 
   await expect(page.getByRole("heading", { name: "주문은 완료됐어요" })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "미션 수행 결과" })).toHaveAttribute(
@@ -191,7 +196,7 @@ test("단품을 고르면 사이드·음료 없이 담기 화면으로 가고, �
   await expect(main(page)).toContainText("구성버거만");
   await page.getByRole("button", { name: "장바구니 담기" }).click();
   await payWith(page, "신용·체크카드");
-  await page.getByRole("button", { name: "주문번호 확인" }).click();
+  await page.getByRole("button", { name: "결과 보기" }).click();
 
   const differences = page.getByRole("region", { name: "미션과 다른 점" });
   await expect(differences).toContainText("단품을 골랐어요 (미션: 불고기버거 세트 선택)");

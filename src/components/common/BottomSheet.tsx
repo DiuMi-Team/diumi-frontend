@@ -8,10 +8,18 @@ type BottomSheetProps = {
   /** Esc 키로 닫을 때 부른다 */
   onClose: () => void;
   label: string;
+  /** 시트 높이. 기본은 AI 음성 도우미(520px) */
+  heightClass?: string;
   children: ReactNode;
 };
 
-export function BottomSheet({ open, onClose, label, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  label,
+  heightClass = "h-[520px]",
+  children,
+}: BottomSheetProps) {
   const ref = useNativeDialog(open);
 
   return (
@@ -22,7 +30,7 @@ export function BottomSheet({ open, onClose, label, children }: BottomSheetProps
         event.preventDefault();
         onClose();
       }}
-      className="mx-auto mt-auto mb-0 h-[520px] max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[32px] border-t-4 border-mint bg-white text-text backdrop:bg-black/20"
+      className={`mx-auto mt-auto mb-0 ${heightClass} max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[32px] border-t-4 border-mint bg-white text-text backdrop:bg-black/20`}
     >
       <div className="flex min-h-full flex-col gap-3 px-5 pt-3 pb-5">
         <div className="h-[5px] w-12 flex-none self-center rounded-[3px] bg-gray-2" />

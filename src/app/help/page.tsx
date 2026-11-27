@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Header, HeaderLink } from "@/components/common/Header";
-import { CloseIcon, MicIcon } from "@/components/icons/ui-icons";
+import { VoiceTestSection } from "@/components/help/VoiceTestSection";
+import { CloseIcon } from "@/components/icons/ui-icons";
 
 const SERVICE_STEPS = [
   "홈에서 배우고 싶은 서비스 고르기",
@@ -72,12 +73,7 @@ export default function HelpPage() {
             실전모드의 주문·결제 화면에서 모르는 게 있으면 하단의 주황색 &apos;음성 도우미&apos;
             버튼을 누르세요
           </p>
-          <div className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-orange text-18 font-bold short:h-12">
-            <span className="flex size-[34px] items-center justify-center rounded-full bg-white-pure">
-              <MicIcon size={20} />
-            </span>
-            음성 도우미
-          </div>
+          <VoiceTestSection />
           <StepList steps={VOICE_STEPS} numberClass="bg-white" />
         </HelpSection>
       </main>

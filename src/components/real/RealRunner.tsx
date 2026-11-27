@@ -15,6 +15,7 @@ import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { RealProvider } from "@/components/real/RealContext";
 import { RealMissionIntro } from "@/components/real/RealMissionIntro";
 import { useRealVoice } from "@/components/real/useRealVoice";
+import { useBrowserBack } from "@/components/common/useBrowserBack";
 import { RealCartScreen } from "@/components/real/screens/RealCartScreen";
 import { RealDineScreen } from "@/components/real/screens/RealDineScreen";
 import {
@@ -50,7 +51,6 @@ import { actionForMove, actionForOrder, type BackendAction } from "@/features/re
 import { screenCode } from "@/features/real/screen-codes";
 import { judgementFromServer, type MissionJudgement } from "@/features/real/judge";
 import { RealSessionTracker } from "@/features/real/session-tracker";
-import { voiceSample } from "@/features/real/voice";
 
 const SCREENS: Record<Exclude<RealScreen, "intro">, ComponentType> = {
   dine: RealDineScreen,
@@ -79,7 +79,6 @@ const SCREEN_GAP: Partial<Record<RealScreen, string>> = {
   paidOptions: "gap-2.5 short:gap-1.5",
   freeOptions: "gap-2.5 short:gap-1.5",
   setCompose: "gap-2.5 short:gap-1.5",
-  done: "gap-3.5 short:gap-2.5",
   result: "gap-3.5 short:gap-2.5",
 };
 
@@ -249,6 +248,9 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
     back();
   };
 
+  /* 휴대폰 뒤로 가기도 "이전으로"처럼 한 화면씩 돌아간다. 결제를 마친 뒤에는 되돌아가지 않는다 */
+  useBrowserBack(history.length > 1 && !FINISHED_SCREENS.includes(screen), userBack);
+
   /* 도움 요청 횟수는 백엔드가 AI 연결 횟수로 센다. AI_HELP 행동을 따로 보내면 두 번 세진다 */
   const openVoice = () => {
     record("help_open");
@@ -365,7 +367,6 @@ export function RealRunner({ setup }: { setup: RealSetup }) {
         errorKind={voice.errorKind}
         question={voice.question}
         answer={voice.answer}
-        hint={voiceSample(setup.service, screen).question}
         onMicClick={voice.onMicClick}
         onRetry={voice.retry}
       />

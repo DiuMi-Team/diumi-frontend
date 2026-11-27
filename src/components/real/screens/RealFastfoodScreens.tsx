@@ -5,6 +5,12 @@ import { BurgerIcon, SetDrinkIcon, SetMealIcon, SideIcon } from "@/components/ic
 import { ChevronRightIcon } from "@/components/icons/ui-icons";
 import { KIOSK_COPY } from "@/components/practice/kiosk/copy";
 import { ScreenHeading, Spacer } from "@/components/practice/kiosk/parts";
+import {
+  CartDeleteButton,
+  CartHeading,
+  EmptyCart,
+  useCartDelete,
+} from "@/components/real/CartDelete";
 import { useReal } from "@/components/real/RealContext";
 import {
   OptionLabel,
@@ -285,10 +291,16 @@ function InfoRow({
 export function RealOrderReviewScreen() {
   const { order, act, go } = useReal();
   const copy = KIOSK_COPY.fastfood.review;
+  const cartDelete = useCartDelete();
+  const empty = order.cart.length === 0;
 
   return (
     <>
-      <ScreenHeading title="주문 내역을 확인해 주세요" />
+      <CartHeading
+        title="주문 내역을 확인해 주세요"
+        onClearAll={empty ? undefined : cartDelete.askAll}
+      />
+      {empty && <EmptyCart />}
       <ul aria-label="주문 내역" className="flex flex-col gap-2.5">
         {order.cart.map((item, index) =>
           item.type === "burger" ? (
@@ -308,6 +320,10 @@ export function RealOrderReviewScreen() {
                   </b>
                   <span className="text-16 text-text-sub">{itemDetail(item)}</span>
                 </span>
+                <CartDeleteButton
+                  label={itemName(item)}
+                  onClick={() => cartDelete.askItem(index)}
+                />
               </div>
               <div className="flex items-center justify-between border-t-2 border-white pt-3 text-18 font-bold short:pt-2">
                 <span>수량</span>
@@ -330,11 +346,17 @@ export function RealOrderReviewScreen() {
         {copy.addMore}
       </button>
       <RealBottomBar>
-        <button type="button" onClick={() => go("paymentMethod")} className={REAL_PRIMARY_CLASS}>
+        <button
+          type="button"
+          disabled={empty}
+          onClick={() => go("paymentMethod")}
+          className={`${REAL_PRIMARY_CLASS} disabled:opacity-45`}
+        >
           {copy.next}
           <ChevronRightIcon size={20} />
         </button>
       </RealBottomBar>
+      {cartDelete.dialog}
     </>
   );
 }

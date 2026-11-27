@@ -12,6 +12,8 @@ export type ConditionResult = {
   ok: boolean;
   /** 틀렸을 때 미션과 다른 점. 예: "매장 식사를 골랐어요 (미션: 포장 선택)" */
   differences: string[];
+  /** 맞혔을 때 잘한 점. 예: "포장을 골랐어요". 틀렸으면 null */
+  goodPoint: string | null;
 };
 
 export type MissionJudgement = {
@@ -30,6 +32,31 @@ export function objectParticle(word: string): "을" | "를" {
   const code = last.charCodeAt(0) - 0xac00;
   if (code >= 0 && code <= 11171) return code % 28 === 0 ? "를" : "을";
   return /[lmnt]$/i.test(word.trim()) && !/(ar|ra|ge)$/i.test(word.trim()) ? "을" : "를";
+}
+
+/** 방향 조사. 받침이 없거나 ㄹ 받침이면 "로", 아니면 "으로" (카드로, 모바일페이로, 현금으로) */
+export function directionParticle(word: string): "으로" | "로" {
+  const last = word.trim().at(-1) ?? "";
+  const code = last.charCodeAt(0) - 0xac00;
+  if (code < 0 || code > 11171) return "로";
+  const final = code % 28;
+  return final === 0 || final === 8 ? "로" : "으로";
+}
+
+/**
+ * 맞힌 완료 조건을 잘한 점 문장으로 바꾼다. 서버가 문장(detail)을 주면 그것을 쓴다.
+ * - "포장 선택" → "포장을 골랐어요"
+ * - "카드 결제 완료" → "카드로 결제했어요"
+ * - 그 밖의 조건은 "Large 사이즈 · 수량 2잔"처럼 조건 문구 그대로 둔다
+ */
+export function goodPointText(condition: string, detail?: string | null): string {
+  if (detail) return readableDetail(detail);
+  const label = condition.trim();
+  const payment = label.match(/^(.+?)\s*결제(?:\s*완료)?$/);
+  if (payment) return `${payment[1]}${directionParticle(payment[1])} 결제했어요`;
+  const select = label.match(/^(.+?)\s*선택$/);
+  if (select) return `${select[1]}${objectParticle(select[1])} 골랐어요`;
+  return label;
 }
 
 /**
@@ -58,6 +85,7 @@ export function judgementFromServer(result: SessionResult): MissionJudgement | n
         !condition.passed && condition.detail
           ? [`${readableDetail(condition.detail)} (미션: ${condition.condition})`]
           : [],
+      goodPoint: condition.passed ? goodPointText(condition.condition, condition.detail) : null,
     })),
   };
 }

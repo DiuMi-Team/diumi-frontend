@@ -1,7 +1,8 @@
 "use client";
 
 import { BottomSheet } from "@/components/common/BottomSheet";
-import { CloseIcon, MicIcon, SpeakerIcon } from "@/components/icons/ui-icons";
+import { VoiceOrb } from "@/components/common/VoiceOrb";
+import { CloseIcon, SpeakerIcon } from "@/components/icons/ui-icons";
 import type { VoiceErrorKind, VoiceStatus } from "@/features/voice/conversation";
 
 type VoiceAssistantSheetProps = {
@@ -13,10 +14,11 @@ type VoiceAssistantSheetProps = {
   /** AI와 연결된 상태. 없으면 예시 질문·답변만 보여 준다 */
   status?: VoiceStatus;
   errorKind?: VoiceErrorKind | null;
-  /** 아직 묻지 않았을 때 보여 줄 질문 예시 */
-  hint?: string;
   onRetry?: () => void;
 };
+
+/** 아직 묻지 않았을 때 보여 주는 질문 예시. 어느 화면에서나 쓸 수 있는 질문 하나로 둔다 */
+const QUESTION_EXAMPLE = "지금 뭘 눌러야 해요?";
 
 const PROMPT: Record<VoiceStatus, string> = {
   connecting: "연결하고 있어요…",
@@ -46,7 +48,6 @@ export function VoiceAssistantSheet({
   answer,
   status,
   errorKind,
-  hint,
   onRetry,
 }: VoiceAssistantSheetProps) {
   const listening = status === "listening";
@@ -66,22 +67,12 @@ export function VoiceAssistantSheet({
           닫기
         </button>
       </div>
-      <div
-        className={`flex size-28 flex-none items-center justify-center self-center rounded-full ${
-          listening ? "bg-orange/50" : "bg-orange/25"
-        } ${micDisabled ? "opacity-45" : ""}`}
-      >
-        <button
-          type="button"
-          aria-label={listening ? "듣기 멈추기" : "질문 말하기"}
-          aria-pressed={status ? listening : undefined}
-          disabled={micDisabled}
-          onClick={onMicClick}
-          className="flex size-21 items-center justify-center rounded-full bg-orange"
-        >
-          <MicIcon size={40} />
-        </button>
-      </div>
+      <VoiceOrb
+        listening={listening}
+        pressed={status ? listening : undefined}
+        disabled={micDisabled}
+        onClick={onMicClick}
+      />
       {error ? (
         <div role="alert" className="flex flex-col items-center gap-1 text-center">
           <p className="text-20 leading-[1.3] font-bold">{error.title}</p>
@@ -102,12 +93,8 @@ export function VoiceAssistantSheet({
           {status === "ready" && !question && (
             <p className="text-16 text-text-sub">
               마이크를 누르고 말해 주세요
-              {hint && (
-                <>
-                  <br />
-                  예) {hint}
-                </>
-              )}
+              <br />
+              예) {QUESTION_EXAMPLE}
             </p>
           )}
         </div>

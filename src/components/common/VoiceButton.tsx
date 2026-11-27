@@ -7,7 +7,7 @@ export function VoiceButton({ className = "", ...props }: VoiceButtonProps) {
   return (
     <button
       type="button"
-      className={`flex h-14 w-full flex-none items-center justify-center gap-2.5 rounded-full bg-orange text-19 font-bold text-text short:h-12 ${className}`}
+      className={`flex h-14 w-full flex-none items-center justify-center gap-2.5 rounded-full bg-orange text-19 shadow-[0_4px_10px_rgb(61_53_49/0.14)] font-bold text-text short:h-12 ${className}`}
       {...props}
     >
       <span className="flex size-9 items-center justify-center rounded-full bg-white-pure short:size-8">

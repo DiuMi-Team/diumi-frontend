@@ -130,6 +130,12 @@ export function actionForOrder(action: OrderAction, before: OrderState): Backend
       return before.paymentMethod
         ? { actionType: "PAY", targetCode: PAYMENT[before.paymentMethod] }
         : null;
+    /*
+     * 백엔드 코드표에 삭제 행동이 없어서 보내지 않는다(모르는 코드는 틀린 행동으로 세진다).
+     * 삭제한 결과는 주문하기(BUTTON_ORDER)의 장바구니 내용(items)으로 전해진다.
+     */
+    case "removeCartItem":
+    case "clearCart":
     case "setPaidOption":
     case "setFreeOption":
     case "applyCoupon":

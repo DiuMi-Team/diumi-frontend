@@ -14,6 +14,7 @@ import { formatDuration, realOrderSummary } from "@/features/real/labels";
 /**
  * 미션 결과 (RCM14). 성공이면 "미션을 성공했어요!", 아니면 "주문은 완료됐어요"와 미션과 다른 점을 보여 준다.
  * 실패 화면은 디자인에 없어 성공 화면과 같은 틀에 주황색으로 만들었다 (빨강은 연습 예외 안내에만 쓴다).
+ * 맞힌 조건은 '잘한 점', 틀린 조건은 '미션과 다른 점'으로 나눠 보여 준다 (XResult2).
  * 판정은 백엔드 수행 결과만 쓴다. 받는 동안은 잠깐 기다리고, 못 받으면 "불러오지 못했어요"를 보여 준다.
  */
 export function RealResultScreen() {
@@ -24,6 +25,9 @@ export function RealResultScreen() {
   const judgement = serverJudgement;
   const { success, percent } = judgement;
   const differences = judgement.conditions.flatMap((condition) => condition.differences);
+  const goodPoints = judgement.conditions.flatMap((condition) =>
+    condition.goodPoint ? [condition.goodPoint] : [],
+  );
 
   return (
     <>
@@ -80,35 +84,47 @@ export function RealResultScreen() {
         </div>
       </section>
 
-      {!success && (
+      {goodPoints.length > 0 && (
         <section
-          aria-label="미션과 다른 점"
-          className="flex flex-col gap-2 rounded-3xl border-2 border-orange bg-white px-5 py-4 short:py-3"
+          aria-label="잘한 점"
+          className="flex flex-col gap-2 rounded-3xl border-2 border-mint bg-white-pure px-5 py-4 short:py-3"
         >
-          <b className="text-18">미션과 다른 점</b>
-          <ul className="flex flex-col gap-1.5 text-17 leading-[1.45]">
-            {differences.map((difference) => (
-              <li key={difference} className="flex gap-2">
-                <span aria-hidden="true" className="text-orange">
-                  •
+          <b className="text-18">잘한 점</b>
+          <ul className="flex flex-col gap-2 text-17 leading-[1.45] short:gap-1.5">
+            {goodPoints.map((point) => (
+              <li key={point} className="flex items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className="mt-px flex size-[22px] flex-none items-center justify-center rounded-full bg-mint text-white-pure"
+                >
+                  <CheckIcon size={13} strokeWidth={3.8} />
                 </span>
-                {difference}
+                {point}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <section
-        aria-label="완료한 주문"
-        className="flex flex-col gap-1.5 rounded-3xl border-2 border-gray-1 px-5 py-4 short:py-3"
-      >
-        <b className="text-18">완료한 주문</b>
-        <p className="text-17 leading-[1.45]">{realOrderSummary(order)}</p>
-        <b className="text-17 text-primary">
-          {KIOSK_COPY[setup.service].numberLabel} {setup.orderNumber}
-        </b>
-      </section>
+      {differences.length > 0 && (
+        <section
+          aria-label="미션과 다른 점"
+          className="flex flex-col gap-2 rounded-3xl border-2 border-orange bg-white-pure px-5 py-4 short:py-3"
+        >
+          <b className="text-18">미션과 다른 점</b>
+          <ul className="flex flex-col gap-1.5 text-17 leading-[1.45]">
+            {differences.map((difference) => (
+              <li key={difference} className="flex items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className="mx-2 mt-[10px] size-1.5 flex-none rounded-full bg-orange"
+                />
+                {difference}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Spacer />
       <RealBottomBar>
